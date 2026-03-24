@@ -6,6 +6,7 @@
   <title>Jabil Notes</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -53,6 +54,57 @@
       transition: background 0.25s, color 0.25s;
     }
 
+    /* ── LOGIN SCREEN ── */
+    #login-screen {
+      display: flex;
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      z-index: 3000;
+      align-items: center; justify-content: center;
+    }
+    #login-screen.hide { display: none; }
+    .login-card {
+      background: var(--bg-surface);
+      border-radius: 14px;
+      padding: 36px 32px;
+      width: 100%; max-width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .login-brand {
+      display: flex; align-items: baseline; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .login-brand h1 { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+    .login-brand .header-version {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      background: #e63946; color: #fff;
+      padding: 2px 7px; border-radius: 20px;
+    }
+    .login-subtitle {
+      font-size: 0.85rem; color: var(--text-muted); margin-bottom: 28px;
+    }
+    .login-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+    .login-field label { font-size: 0.75rem; font-weight: 600; color: var(--text-label); text-transform: uppercase; letter-spacing: 0.4px; }
+    .login-field input {
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px 12px; font-size: 0.9rem;
+      outline: none; background: var(--bg-input); color: var(--text-primary);
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    .login-field input:focus { border-color: #e63946; }
+    .login-btn {
+      width: 100%; background: #e63946; color: #fff; border: none;
+      border-radius: 6px; padding: 11px 18px;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; margin-top: 6px;
+    }
+    .login-btn:hover { background: #c1121f; }
+    .login-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    #login-error {
+      font-size: 0.82rem; color: #e63946; margin-top: 10px;
+      min-height: 18px; text-align: center;
+    }
+
     /* ── HEADER ── */
     header {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -78,6 +130,16 @@
       cursor: pointer; font-size: 1rem; transition: background 0.2s;
     }
     #btn-presets:hover { background: rgba(255,255,255,0.1); }
+    #btn-logout {
+      background: none; border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; border-radius: 6px; padding: 6px 10px;
+      cursor: pointer; font-size: 1rem; transition: background 0.2s;
+    }
+    #btn-logout:hover { background: rgba(255,255,255,0.1); }
+    #header-email {
+      font-size: 0.78rem; color: rgba(255,255,255,0.6);
+      max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
     /* ── TABS ── */
     .tabs {
@@ -359,6 +421,14 @@
     }
     .btn-add-preset:hover { background: #2d2d4e; }
 
+    .btn-apply-presets {
+      background: #e63946; color: #fff; border: none;
+      border-radius: 6px; padding: 10px; font-size: 0.9rem;
+      font-weight: 700; cursor: pointer; margin-top: 4px;
+      width: 100%; transition: background 0.2s;
+    }
+    .btn-apply-presets:hover { background: #c1121f; }
+
     .days-badge { display: inline-block; border-radius: 4px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }
     .days-badge.overdue  { background: #fff1f2; color: #e63946; }
     .days-badge.today    { background: #fff7ed; color: #ea580c; }
@@ -448,7 +518,8 @@
       .header-version { font-size: 0.65rem; padding: 2px 5px; }
       header .date { font-size: 0.72rem; }
       #btn-presets .btn-label { display: none; }
-      #btn-theme, #btn-presets { padding: 6px 9px; font-size: 0.9rem; }
+      #btn-theme, #btn-presets, #btn-logout { padding: 6px 9px; font-size: 0.9rem; }
+      #header-email { display: none; }
 
       /* Tabs: scroll horizontal sem scrollbar visível */
       .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 12px; }
@@ -490,6 +561,27 @@
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <h1>Jabil Notes</h1>
+      <span class="header-version">v01</span>
+    </div>
+    <div class="login-subtitle">Faça login para continuar</div>
+    <div class="login-field">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" placeholder="voce@empresa.com" autocomplete="email" />
+    </div>
+    <div class="login-field">
+      <label for="login-password">Senha</label>
+      <input id="login-password" type="password" placeholder="Sua senha" autocomplete="current-password" />
+    </div>
+    <button class="login-btn" id="btn-login">Entrar</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
 <!-- ERROR SCREEN -->
 <div id="error-screen">
   <div class="icon">⚠️</div>
@@ -507,9 +599,11 @@
     <div class="date" id="header-date"></div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;">
+    <span id="header-email"></span>
     <button id="btn-theme" title="Alternar modo escuro"
       style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:1rem;transition:background 0.2s;">🌙</button>
     <button id="btn-presets" title="Gerenciar atividades recorrentes">⚙️ <span class="btn-label">Recorrentes</span></button>
+    <button id="btn-logout" title="Sair">🚪</button>
   </div>
 </header>
 
@@ -728,7 +822,7 @@
     <h3>Nova atualização</h3>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
       <textarea id="update-text" rows="3" placeholder="Descreva a atualização..." maxlength="300"
-        style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none;"></textarea>
+        style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none;background:var(--bg-input);color:var(--text-primary);"></textarea>
       <span class="error-msg" id="err-update"></span>
       <button class="btn-add-preset" id="btn-add-update">+ Adicionar atualização</button>
     </div>
@@ -795,7 +889,8 @@
       <button class="btn-close" id="btn-close-modal">×</button>
     </div>
     <div class="preset-list" id="preset-list"></div>
-    <hr class="modal-divider" />
+    <button class="btn-apply-presets" id="btn-apply-presets">📋 Aplicar hoje</button>
+    <hr class="modal-divider" style="margin-top:16px;" />
     <h3>Adicionar recorrente</h3>
     <form class="modal-form" id="preset-form" autocomplete="off">
       <div class="field">
@@ -838,7 +933,6 @@ function applyTheme(dark) {
     document.getElementById("btn-theme").textContent = "🌙";
     localStorage.setItem("jabil-theme", "light");
   }
-  // re-render charts with correct text colors if performance tab is active
   if (document.getElementById("tab-performance").classList.contains("active")) {
     renderPerformance();
   }
@@ -852,25 +946,16 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ── UTILS ──────────────────────────────────────────────
-function generateUUID() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
+// ── SUPABASE ───────────────────────────────────────────
+const SUPABASE_URL = "https://mvlpqcziismuwvdgbyoi.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bHBxY3ppaXNtdXd2ZGdieW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODkyMTgsImV4cCI6MjA4OTk2NTIxOH0.4_FTFKBelQl--qtyPK9WMyng3Dp2l4EqyvqU8lRMkOo";
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let currentUser = null;
+
+// ── UTILS ──────────────────────────────────────────────
 function localDateString() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-}
-
-function localISOString() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function formatDateTime(iso) {
@@ -900,7 +985,6 @@ function daysStatus(task) {
 }
 
 function formatDisplayDate(dateStr) {
-  // dateStr: YYYY-MM-DD → DD/MM/YYYY
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
@@ -917,42 +1001,11 @@ const PRIORITY_LABEL = { critica: "Crítica", urgente: "Urgente", normal: "Norma
 const PRIORITY_ICON  = { critica: "🔴", urgente: "🟡", normal: "⚪" };
 
 // ── STATE ──────────────────────────────────────────────
-let state = { today: { date: localDateString(), active: [], completed: [] }, presets: [], projects: [] };
-let hasServer = true;
+let state = { tasks: [], projects: [], presets: [] };
 
-// ── STORAGE KEY ────────────────────────────────────────
-const LS_KEY = "jabil-tasks-data";
-
-// ── LOCAL STORAGE I/O ──────────────────────────────────
-function saveLocal() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {}
-}
-function loadLocal() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    return (data && data.today) ? data : null;
-  } catch { return null; }
-}
-
-// ── SERVER I/O ─────────────────────────────────────────
-async function loadData() {
-  const res = await fetch("/data");
-  if (!res.ok) throw new Error("server_error");
-  const data = await res.json();
-  if (!data || !data.today) return null;
-  return data;
-}
-
-async function saveData() {
-  const res = await fetch("/data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(state)
-  });
-  if (!res.ok) throw new Error("save_failed");
-}
+// helpers
+function getActive()    { return state.tasks.filter(t => t.status === "active"); }
+function getCompleted() { return state.tasks.filter(t => t.status === "completed"); }
 
 // ── ERROR SCREEN ───────────────────────────────────────
 function showErrorScreen(msg) {
@@ -970,30 +1023,77 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.className = "", 3000);
 }
 
+// ── SUPABASE DATA LOADING ──────────────────────────────
+async function loadTasks() {
+  if (!currentUser) return;
+  const { data, error } = await _sb
+    .from("tasks")
+    .select("*, task_updates(*)")
+    .eq("user_id", currentUser.id)
+    .neq("status", "discarded")
+    .order("created_at");
+  if (error) { showToast("Erro ao carregar tarefas", true); return; }
+  state.tasks = data || [];
+}
+
+async function loadProjects() {
+  if (!currentUser) return;
+  const { data, error } = await _sb
+    .from("projects")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("name");
+  if (error) { showToast("Erro ao carregar projetos", true); return; }
+  state.projects = data || [];
+}
+
+async function loadPresets() {
+  if (!currentUser) return;
+  const { data, error } = await _sb
+    .from("presets")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("created_at");
+  if (error) { showToast("Erro ao carregar recorrentes", true); return; }
+  state.presets = data || [];
+}
+
+async function loadAllData() {
+  await Promise.all([loadTasks(), loadProjects(), loadPresets()]);
+}
+
 // ── RENDER ─────────────────────────────────────────────
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function renderActive() {
+  const active = getActive();
   const priorities = ["critica", "urgente", "normal"];
   priorities.forEach(p => {
     const container = document.getElementById(`items-${p}`);
     const group     = document.getElementById(`list-${p}`);
-    const items = state.today.active.filter(a => a.priority === p);
+    const items = active.filter(a => a.priority === p);
     group.style.display = items.length === 0 ? "none" : "block";
     container.innerHTML = "";
     items.forEach(task => {
+      const updates = task.task_updates || [];
       const el = document.createElement("div");
       el.className = `task-item ${p}`;
       el.innerHTML = `
         <div class="task-info">
           <div class="task-name">${escHtml(task.name)}</div>
           <div class="task-meta">
-            <span class="task-project">${escHtml(task.project)}</span>
+            <span class="task-project">${escHtml(task.project || "")}</span>
             &nbsp;·&nbsp;📅 ${formatDisplayDate(task.date || localDateString())}
             ${task.deadline ? `&nbsp;·&nbsp;⏰ <strong>${formatDisplayDate(task.deadline)}</strong>` : ""}
             &nbsp;·&nbsp;${daysStatus(task)}
           </div>
         </div>
         <div class="task-actions">
-          <button class="btn-updates" title="Atualizações" data-id="${task.id}">💬${task.updates && task.updates.length ? `<span class="update-count">${task.updates.length}</span>` : ""}</button>
+          <button class="btn-updates" title="Atualizações" data-id="${task.id}">💬${updates.length ? `<span class="update-count">${updates.length}</span>` : ""}</button>
           <button class="btn-edit" title="Editar" data-id="${task.id}">✏️</button>
           <button class="btn-discard" title="Descartar atividade" data-id="${task.id}">🗑</button>
           <button class="btn-complete" title="Concluir" data-id="${task.id}">✓</button>
@@ -1003,8 +1103,7 @@ function renderActive() {
     });
   });
 
-  // show empty state if nothing active
-  const hasAny = state.today.active.length > 0;
+  const hasAny = active.length > 0;
   const existingEmpty = document.getElementById("empty-active");
   if (!hasAny && !existingEmpty) {
     const empty = document.createElement("div");
@@ -1019,8 +1118,8 @@ function renderActive() {
 
 function renderCompleted() {
   const container = document.getElementById("list-completed");
-  const sorted = [...state.today.completed].sort((a, b) =>
-    (a.completedAt || "").localeCompare(b.completedAt || "")
+  const sorted = [...getCompleted()].sort((a, b) =>
+    (a.completed_at || "").localeCompare(b.completed_at || "")
   );
   if (sorted.length === 0) {
     container.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>Nenhuma atividade concluída ainda hoje.</p></div>`;
@@ -1034,11 +1133,11 @@ function renderCompleted() {
       <div class="task-info">
         <div class="task-name">${escHtml(task.name)}</div>
         <div class="task-meta">
-          <span class="task-project">${escHtml(task.project)}</span>
+          <span class="task-project">${escHtml(task.project || "")}</span>
           &nbsp;·&nbsp;📅 ${task.date ? formatDisplayDate(task.date) : ""}
           ${task.deadline ? `&nbsp;·&nbsp;⏰ ${formatDisplayDate(task.deadline)}` : ""}
           &nbsp;·&nbsp;${PRIORITY_ICON[task.priority]} ${PRIORITY_LABEL[task.priority]}
-          &nbsp;·&nbsp;concluída às ${formatTime(task.completedAt)}
+          &nbsp;·&nbsp;concluída às ${formatTime(task.completed_at)}
         </div>
       </div>
     `;
@@ -1059,18 +1158,12 @@ function renderPresets() {
     el.innerHTML = `
       <div class="preset-info">
         <div class="preset-name">${escHtml(p.name)}</div>
-        <div class="preset-sub">${escHtml(p.project)} · ${PRIORITY_ICON[p.priority]} ${PRIORITY_LABEL[p.priority]}</div>
+        <div class="preset-sub">${escHtml(p.project || "")} · ${PRIORITY_ICON[p.priority]} ${PRIORITY_LABEL[p.priority]}</div>
       </div>
       <button class="btn-remove" data-id="${p.id}">Remover</button>
     `;
     list.appendChild(el);
   });
-}
-
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function renderProjectSelects() {
@@ -1103,7 +1196,7 @@ function renderProjectsTab() {
     el.className = "project-item";
     el.innerHTML = `
       <span class="project-name">${escHtml(p.name)}</span>
-      <button class="btn-remove" data-name="${escHtml(p.name)}">Remover</button>
+      <button class="btn-remove" data-id="${p.id}" data-name="${escHtml(p.name)}">Remover</button>
     `;
     container.appendChild(el);
   });
@@ -1117,20 +1210,10 @@ function renderAll() {
 }
 
 // ── ACTIONS ────────────────────────────────────────────
-async function persist() {
-  saveLocal(); // sempre salva no localStorage como backup
-  if (!hasServer) return;
-  try {
-    await saveData();
-  } catch {
-    showToast("Erro ao salvar no servidor — dados salvos localmente", true);
-  }
-}
-
 let pendingCompleteId = null;
 
 function completeTask(id) {
-  const task = state.today.active.find(t => t.id === id);
+  const task = getActive().find(t => t.id === id);
   if (!task) return;
   pendingCompleteId = id;
   document.getElementById("complete-task-name").textContent = task.name;
@@ -1140,104 +1223,182 @@ function completeTask(id) {
   setTimeout(() => document.getElementById("complete-date-input").focus(), 100);
 }
 
-function confirmComplete() {
+async function confirmComplete() {
   const dateVal = document.getElementById("complete-date-input").value;
   const err = document.getElementById("err-complete");
   err.textContent = "";
   if (!dateVal) { err.textContent = "Informe a data de conclusão"; return; }
-  const idx = state.today.active.findIndex(a => a.id === pendingCompleteId);
-  if (idx === -1) { document.getElementById("complete-overlay").style.display = "none"; return; }
-  const task = state.today.active.splice(idx, 1)[0];
-  // Build completedAt ISO from selected date + current time
-  const [y, m, d] = dateVal.split("-");
+
   const now = new Date();
   const pad = n => String(n).padStart(2, "0");
-  task.completedAt = `${y}-${m}-${d}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  state.today.completed.push(task);
+  const [y, m, d] = dateVal.split("-");
+  const completedAt = `${y}-${m}-${d}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const { error } = await _sb
+    .from("tasks")
+    .update({ status: "completed", completed_at: completedAt })
+    .eq("id", pendingCompleteId);
+
+  if (error) { showToast("Erro ao concluir tarefa", true); return; }
+
   document.getElementById("complete-overlay").style.display = "none";
+  await loadTasks();
   renderAll();
-  persist();
+  showToast("Atividade concluída!");
 }
 
-function addTask(name, project, priority, date, deadline) {
-  const task = {
-    id: generateUUID(),
-    name: name.trim(),
-    project: project.trim(),
-    priority,
-    date: date || localDateString(),
-    deadline: deadline || "",
-    createdAt: localISOString()
-  };
-  state.today.active.push(task);
+async function addTask(name, project, priority, date, deadline) {
+  if (!currentUser) return;
+  const { data, error } = await _sb
+    .from("tasks")
+    .insert({
+      name: name.trim(),
+      project: project.trim(),
+      priority,
+      date: date || localDateString(),
+      deadline: deadline || null,
+      user_id: currentUser.id,
+      status: "active"
+    })
+    .select()
+    .single();
+
+  if (error) { showToast("Erro ao adicionar tarefa", true); return; }
+  data.task_updates = [];
+  state.tasks.push(data);
   renderAll();
-  persist();
+  showToast("Atividade adicionada!");
 }
 
-function addPreset(name, project, priority) {
-  const preset = { id: generateUUID(), name: name.trim(), project: project.trim(), priority };
-  state.presets.push(preset);
+async function addPreset(name, project, priority) {
+  if (!currentUser) return;
+  const { data, error } = await _sb
+    .from("presets")
+    .insert({ name: name.trim(), project: project.trim(), priority, user_id: currentUser.id })
+    .select()
+    .single();
+  if (error) { showToast("Erro ao adicionar recorrente", true); return; }
+  state.presets.push(data);
   renderPresets();
-  persist();
 }
 
-function removePreset(id) {
+async function removePreset(id) {
+  const { error } = await _sb.from("presets").delete().eq("id", id);
+  if (error) { showToast("Erro ao remover recorrente", true); return; }
   state.presets = state.presets.filter(p => p.id !== id);
   renderPresets();
-  persist();
 }
 
-function addProject(name) {
-  if (!state.projects) state.projects = [];
+async function addProject(name) {
+  if (!currentUser) return false;
   if (state.projects.some(p => p.name.toLowerCase() === name.toLowerCase())) {
     showToast("Projeto já cadastrado", true);
     return false;
   }
-  state.projects.push({ name: name.trim() });
+  const { data, error } = await _sb
+    .from("projects")
+    .insert({ name: name.trim(), user_id: currentUser.id })
+    .select()
+    .single();
+  if (error) { showToast("Erro ao adicionar projeto", true); return false; }
+  state.projects.push(data);
   renderAll();
-  persist();
   return true;
 }
 
-function removeProject(name) {
-  state.projects = (state.projects || []).filter(p => p.name !== name);
+async function removeProject(id) {
+  const { error } = await _sb.from("projects").delete().eq("id", id);
+  if (error) { showToast("Erro ao remover projeto", true); return; }
+  state.projects = state.projects.filter(p => p.id !== id);
   renderAll();
-  persist();
+}
+
+// ── APPLY PRESETS ───────────────────────────────────────
+async function applyPresetsToday() {
+  if (!currentUser || state.presets.length === 0) {
+    showToast("Nenhum recorrente cadastrado", true);
+    return;
+  }
+  const today = localDateString();
+  const activeTodayNames = getActive()
+    .filter(t => t.date === today)
+    .map(t => t.name.toLowerCase());
+
+  const toCreate = state.presets.filter(p =>
+    !activeTodayNames.includes(p.name.toLowerCase())
+  );
+
+  if (toCreate.length === 0) {
+    showToast("Todos os recorrentes já foram aplicados hoje");
+    return;
+  }
+
+  const btn = document.getElementById("btn-apply-presets");
+  btn.disabled = true;
+  btn.textContent = "Aplicando...";
+
+  let created = 0;
+  for (const p of toCreate) {
+    const { data, error } = await _sb
+      .from("tasks")
+      .insert({
+        name: p.name,
+        project: p.project || "",
+        priority: p.priority,
+        date: today,
+        deadline: null,
+        user_id: currentUser.id,
+        status: "active"
+      })
+      .select()
+      .single();
+    if (!error && data) {
+      data.task_updates = [];
+      state.tasks.push(data);
+      created++;
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = "📋 Aplicar hoje";
+
+  renderAll();
+  showToast(`${created} atividade(s) recorrente(s) adicionada(s)!`);
 }
 
 // ── EXPORT EXCEL ───────────────────────────────────────
 function exportExcel() {
-  const sorted = [...state.today.completed].sort((a, b) =>
-    (a.completedAt || "").localeCompare(b.completedAt || "")
+  const sorted = [...getCompleted()].sort((a, b) =>
+    (a.completed_at || "").localeCompare(b.completed_at || "")
   );
   const rows = sorted.map(t => ({
     "Nome": t.name,
-    "Projeto": t.project,
+    "Projeto": t.project || "",
     "Prioridade": PRIORITY_LABEL[t.priority] || t.priority,
-    "Criada em": formatDateTime(t.createdAt),
-    "Concluída em": formatDateTime(t.completedAt)
+    "Criada em": formatDateTime(t.created_at),
+    "Concluída em": formatDateTime(t.completed_at)
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Concluídas");
-  XLSX.writeFile(wb, `jabil-tasks-${state.today.date}.xlsx`);
+  XLSX.writeFile(wb, `jabil-tasks-${localDateString()}.xlsx`);
 }
 
 function exportExcelAtivas() {
   const PRIORITY_ORDER = { critica: 0, urgente: 1, normal: 2 };
-  const sorted = [...state.today.active].sort((a, b) =>
+  const sorted = [...getActive()].sort((a, b) =>
     (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
   );
   const rows = sorted.map(t => ({
     "Nome": t.name,
-    "Projeto": t.project,
+    "Projeto": t.project || "",
     "Prioridade": PRIORITY_LABEL[t.priority] || t.priority,
-    "Criada em": formatDateTime(t.createdAt)
+    "Criada em": formatDateTime(t.created_at)
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Ativas");
-  XLSX.writeFile(wb, `jabil-tasks-ativas-${state.today.date}.xlsx`);
+  XLSX.writeFile(wb, `jabil-tasks-ativas-${localDateString()}.xlsx`);
 }
 
 // ── PERFORMANCE ────────────────────────────────────────
@@ -1247,8 +1408,8 @@ function destroyChart(key) {
 }
 
 function renderPerformance() {
-  const active    = state.today.active    || [];
-  const completed = state.today.completed || [];
+  const active    = getActive();
+  const completed = getCompleted();
   const total     = active.length + completed.length;
   const rate      = total ? Math.round((completed.length / total) * 100) : 0;
 
@@ -1265,7 +1426,6 @@ function renderPerformance() {
   };
   const scaleStyle = { ticks: { color: textColor }, grid: { color: gridColor } };
 
-  // Donut: conclusão
   destroyChart("donut");
   perfCharts["donut"] = new Chart(document.getElementById("chart-donut"), {
     type: "doughnut",
@@ -1277,7 +1437,6 @@ function renderPerformance() {
     options: { cutout: "70%", ...chartDefaults, maintainAspectRatio: true }
   });
 
-  // Bar: por prioridade
   const priorities = ["critica", "urgente", "normal"];
   const priLabels  = ["🔴 Crítica", "🟡 Urgente", "⚪ Normal"];
   const countBy = (arr, pri) => arr.filter(t => t.priority === pri).length;
@@ -1298,7 +1457,6 @@ function renderPerformance() {
     }
   });
 
-  // Bar horizontal: por projeto
   const allTasks   = [...active, ...completed];
   const projNames  = [...new Set(allTasks.map(t => t.project).filter(Boolean))];
   const projActive = projNames.map(p => active.filter(t => t.project === p).length);
@@ -1335,7 +1493,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 // ── ADD FORM ───────────────────────────────────────────
-document.getElementById("add-form").addEventListener("submit", e => {
+document.getElementById("add-form").addEventListener("submit", async e => {
   e.preventDefault();
   const name     = document.getElementById("inp-name").value;
   const project  = document.getElementById("inp-project").value;
@@ -1351,7 +1509,7 @@ document.getElementById("add-form").addEventListener("submit", e => {
   if (!deadline) { document.getElementById("err-deadline").textContent = "Informe o deadline"; valid = false; }
   else if (deadline < today) { document.getElementById("err-deadline").textContent = "Deadline não pode ser anterior a hoje"; valid = false; }
   if (!valid) return;
-  addTask(name, project, priority, today, deadline);
+  await addTask(name, project, priority, today, deadline);
   document.getElementById("inp-name").value = "";
   document.getElementById("inp-project").value = "";
   document.getElementById("inp-priority").value = "normal";
@@ -1360,20 +1518,21 @@ document.getElementById("add-form").addEventListener("submit", e => {
 });
 
 // ── PROJECTS TAB ───────────────────────────────────────
-document.getElementById("btn-add-project").addEventListener("click", () => {
+document.getElementById("btn-add-project").addEventListener("click", async () => {
   const inp = document.getElementById("inp-proj-name");
   const err = document.getElementById("err-proj-name");
   err.textContent = "";
   const name = inp.value.trim();
   if (!name) { err.textContent = "Informe o nome do projeto"; return; }
-  if (addProject(name)) inp.value = "";
+  const ok = await addProject(name);
+  if (ok) inp.value = "";
 });
 document.getElementById("inp-proj-name").addEventListener("keydown", e => {
   if (e.key === "Enter") { e.preventDefault(); document.getElementById("btn-add-project").click(); }
 });
 document.getElementById("projects-list").addEventListener("click", e => {
   const btn = e.target.closest(".btn-remove");
-  if (btn) removeProject(btn.dataset.name);
+  if (btn) removeProject(btn.dataset.id);
 });
 
 // Ctrl+Enter submete o formulário a partir do textarea
@@ -1392,9 +1551,16 @@ document.getElementById("tab-ativas").addEventListener("click", e => {
   if (e.target.closest(".btn-discard")) {
     const id = e.target.closest(".btn-discard").dataset.id;
     if (confirm("Descartar esta atividade? Ela será removida permanentemente.")) {
-      state.today.active = state.today.active.filter(t => t.id !== id);
-      renderAll();
-      persist();
+      (async () => {
+        const { error } = await _sb
+          .from("tasks")
+          .update({ status: "discarded" })
+          .eq("id", id);
+        if (error) { showToast("Erro ao descartar tarefa", true); return; }
+        state.tasks = state.tasks.filter(t => t.id !== id);
+        renderAll();
+        showToast("Atividade descartada");
+      })();
     }
   }
 });
@@ -1403,7 +1569,7 @@ document.getElementById("tab-ativas").addEventListener("click", e => {
 let currentUpdateTaskId = null;
 
 function openUpdatesModal(id) {
-  const task = state.today.active.find(t => t.id === id);
+  const task = state.tasks.find(t => t.id === id);
   if (!task) return;
   currentUpdateTaskId = id;
   document.getElementById("updates-task-name").textContent = task.name;
@@ -1416,33 +1582,37 @@ function openUpdatesModal(id) {
 
 function renderUpdatesList(task) {
   const container = document.getElementById("updates-list");
-  const updates = task.updates || [];
+  const updates = task.task_updates || [];
   if (updates.length === 0) {
     container.innerHTML = `<p class="modal-empty">Nenhuma atualização ainda.</p>`;
     return;
   }
-  const reversed = [...updates].map((u, i) => ({ ...u, _origIdx: i })).reverse();
-  container.innerHTML = reversed.map(u => `
+  const sorted = [...updates].sort((a, b) =>
+    (b.created_at || "").localeCompare(a.created_at || "")
+  );
+  container.innerHTML = sorted.map(u => `
     <div class="update-item">
       <div class="update-item-body">
         <div class="update-item-text">${escHtml(u.text)}</div>
-        <div class="update-item-meta">📅 ${formatDisplayDate(u.date)} às ${u.time}</div>
+        <div class="update-item-meta">📅 ${formatDateTime(u.created_at)}</div>
       </div>
-      <button class="btn-del-update" data-idx="${u._origIdx}" title="Remover atualização">🗑</button>
+      <button class="btn-del-update" data-update-id="${u.id}" title="Remover atualização">🗑</button>
     </div>
   `).join("");
 }
 
-document.getElementById("updates-list").addEventListener("click", e => {
+document.getElementById("updates-list").addEventListener("click", async e => {
   const btn = e.target.closest(".btn-del-update");
   if (!btn) return;
-  const task = state.today.active.find(t => t.id === currentUpdateTaskId);
-  if (!task || !task.updates) return;
-  const idx = parseInt(btn.dataset.idx, 10);
-  task.updates.splice(idx, 1);
-  renderUpdatesList(task);
-  renderAll();
-  persist();
+  const updateId = btn.dataset.updateId;
+  const { error } = await _sb.from("task_updates").delete().eq("id", updateId);
+  if (error) { showToast("Erro ao remover atualização", true); return; }
+  const task = state.tasks.find(t => t.id === currentUpdateTaskId);
+  if (task) {
+    task.task_updates = (task.task_updates || []).filter(u => u.id !== updateId);
+    renderUpdatesList(task);
+    renderAll();
+  }
 });
 document.getElementById("btn-close-complete").addEventListener("click", () => {
   document.getElementById("complete-overlay").style.display = "none";
@@ -1463,25 +1633,24 @@ document.getElementById("updates-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("updates-overlay"))
     document.getElementById("updates-overlay").style.display = "none";
 });
-document.getElementById("btn-add-update").addEventListener("click", () => {
+document.getElementById("btn-add-update").addEventListener("click", async () => {
   const text = document.getElementById("update-text").value.trim();
   const err  = document.getElementById("err-update");
   err.textContent = "";
   if (!text) { err.textContent = "Escreva o texto da atualização"; return; }
-  const task = state.today.active.find(t => t.id === currentUpdateTaskId);
+  const task = state.tasks.find(t => t.id === currentUpdateTaskId);
   if (!task) return;
-  if (!task.updates) task.updates = [];
-  const now = new Date();
-  const pad = n => String(n).padStart(2, "0");
-  task.updates.push({
-    text,
-    date: localDateString(),
-    time: `${pad(now.getHours())}:${pad(now.getMinutes())}`
-  });
+  const { data, error } = await _sb
+    .from("task_updates")
+    .insert({ task_id: currentUpdateTaskId, text, user_id: currentUser.id })
+    .select()
+    .single();
+  if (error) { showToast("Erro ao adicionar atualização", true); return; }
+  if (!task.task_updates) task.task_updates = [];
+  task.task_updates.push(data);
   document.getElementById("update-text").value = "";
   renderUpdatesList(task);
   renderAll();
-  persist();
 });
 document.getElementById("update-text").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -1492,13 +1661,12 @@ document.getElementById("update-text").addEventListener("keydown", e => {
 
 // ── EDIT MODAL ─────────────────────────────────────────
 function openEditModal(id) {
-  const task = state.today.active.find(t => t.id === id);
+  const task = state.tasks.find(t => t.id === id);
   if (!task) return;
   document.getElementById("edit-id").value       = id;
   document.getElementById("edit-name").value     = task.name;
   document.getElementById("edit-deadline").value = task.deadline || "";
   document.getElementById("edit-priority").value = task.priority;
-  // populate project select
   const sel = document.getElementById("edit-project");
   sel.innerHTML = `<option value="">— Selecione um projeto —</option>`;
   (state.projects || []).forEach(p => {
@@ -1509,8 +1677,7 @@ function openEditModal(id) {
     sel.appendChild(opt);
   });
   document.getElementById("err-edit-deadline").textContent = "";
-  const overlay = document.getElementById("edit-overlay");
-  overlay.style.display = "flex";
+  document.getElementById("edit-overlay").style.display = "flex";
 }
 
 document.getElementById("btn-close-edit").addEventListener("click", () => {
@@ -1520,7 +1687,7 @@ document.getElementById("edit-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("edit-overlay"))
     document.getElementById("edit-overlay").style.display = "none";
 });
-document.getElementById("edit-form").addEventListener("submit", e => {
+document.getElementById("edit-form").addEventListener("submit", async e => {
   e.preventDefault();
   const id       = document.getElementById("edit-id").value;
   const name     = document.getElementById("edit-name").value.trim();
@@ -1533,15 +1700,25 @@ document.getElementById("edit-form").addEventListener("submit", e => {
     document.getElementById("err-edit-deadline").textContent = "Deadline não pode ser anterior a hoje";
     return;
   }
-  const task = state.today.active.find(t => t.id === id);
+  const task = state.tasks.find(t => t.id === id);
   if (!task) return;
+  const { error } = await _sb
+    .from("tasks")
+    .update({
+      name: name || task.name,
+      project: project || task.project,
+      deadline: deadline || null,
+      priority
+    })
+    .eq("id", id);
+  if (error) { showToast("Erro ao editar tarefa", true); return; }
   task.name     = name || task.name;
   task.project  = project || task.project;
-  task.deadline = deadline;
+  task.deadline = deadline || null;
   task.priority = priority;
   document.getElementById("edit-overlay").style.display = "none";
   renderAll();
-  persist();
+  showToast("Atividade atualizada!");
 });
 
 // ── EXPORT ─────────────────────────────────────────────
@@ -1564,16 +1741,24 @@ document.getElementById("preset-list").addEventListener("click", e => {
   const btn = e.target.closest(".btn-remove");
   if (btn) removePreset(btn.dataset.id);
 });
-document.getElementById("preset-form").addEventListener("submit", e => {
+document.getElementById("preset-form").addEventListener("submit", async e => {
   e.preventDefault();
   const name     = document.getElementById("p-name").value;
   const project  = document.getElementById("p-project").value;
   const priority = document.getElementById("p-priority").value;
   if (!name.trim() || !project) return;
-  addPreset(name, project, priority);
+  await addPreset(name, project, priority);
   document.getElementById("p-name").value = "";
   document.getElementById("p-project").value = "";
   document.getElementById("p-priority").value = "normal";
+});
+document.getElementById("btn-apply-presets").addEventListener("click", applyPresetsToday);
+
+// ── LOGOUT ─────────────────────────────────────────────
+document.getElementById("btn-logout").addEventListener("click", async () => {
+  await _sb.auth.signOut();
+  currentUser = null;
+  state = { tasks: [], projects: [], presets: [] };
 });
 
 // ── HEADER DATE ────────────────────────────────────────
@@ -1583,9 +1768,40 @@ function updateHeaderDate() {
     d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 }
 
+// ── LOGIN ──────────────────────────────────────────────
+function showLoginScreen() {
+  document.getElementById("login-screen").classList.remove("hide");
+}
+
+function hideLoginScreen() {
+  document.getElementById("login-screen").classList.add("hide");
+}
+
+document.getElementById("btn-login").addEventListener("click", async () => {
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errEl    = document.getElementById("login-error");
+  const btn      = document.getElementById("btn-login");
+  errEl.textContent = "";
+  if (!email || !password) { errEl.textContent = "Preencha email e senha."; return; }
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+  const { error } = await _sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false;
+  btn.textContent = "Entrar";
+  if (error) {
+    errEl.textContent = error.message === "Invalid login credentials"
+      ? "Email ou senha incorretos."
+      : error.message;
+  }
+});
+
+document.getElementById("login-password").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("btn-login").click();
+});
+
 // ── INIT ───────────────────────────────────────────────
 window.addEventListener("load", async () => {
-  // SheetJS check
   if (typeof XLSX === "undefined") {
     ["btn-export", "btn-export-ativas"].forEach(id => {
       const btn = document.getElementById(id);
@@ -1596,60 +1812,34 @@ window.addEventListener("load", async () => {
 
   updateHeaderDate();
 
-  let loaded;
-  try {
-    loaded = await loadData();
-  } catch {
-    hasServer = false;
-    loaded = null;
-  }
-
-  // Se servidor falhou, tenta localStorage
-  if (!loaded) loaded = loadLocal();
-
-  const today = localDateString();
-
-  if (!loaded) {
-    // Primeiro uso — sem servidor e sem dados locais
-    state = { today: { date: today, active: [], completed: [] }, presets: [], projects: [] };
-    saveLocal();
-    if (hasServer) { try { await saveData(); } catch { /* non-fatal */ } }
-    renderAll();
-    return;
-  }
-
-  // Day rollover?
-  if (loaded.today.date !== today) {
-    state = {
-      today: {
-        date: today,
-        active: (loaded.presets || []).map(p => ({
-          id: generateUUID(),
-          name: p.name,
-          project: p.project,
-          priority: p.priority,
-          createdAt: localISOString()
-        })),
-        completed: []
-      },
-      presets: loaded.presets || [],
-      projects: loaded.projects || []
-    };
-    saveLocal();
-    if (hasServer) {
-      try { await saveData(); } catch {
-        showErrorScreen("Erro ao iniciar novo dia. Recarregue a página.");
-        return;
-      }
+  // Auth state listener
+  _sb.auth.onAuthStateChange(async (event, session) => {
+    if (session && session.user) {
+      currentUser = session.user;
+      document.getElementById("header-email").textContent = currentUser.email;
+      hideLoginScreen();
+      await loadAllData();
+      renderAll();
+    } else {
+      currentUser = null;
+      state = { tasks: [], projects: [], presets: [] };
+      document.getElementById("header-email").textContent = "";
+      showLoginScreen();
     }
-  } else {
-    state = loaded;
-    // Se veio do servidor, sincroniza localStorage
-    saveLocal();
-  }
+  });
 
-  renderAll();
-})();
+  // Check existing session
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session && session.user) {
+    currentUser = session.user;
+    document.getElementById("header-email").textContent = currentUser.email;
+    hideLoginScreen();
+    await loadAllData();
+    renderAll();
+  } else {
+    showLoginScreen();
+  }
+});
 
 // ── NOTIFICAÇÕES ────────────────────────────────────────────────────
 
@@ -1664,7 +1854,7 @@ async function loadNotifyConfig() {
     document.getElementById("cfg-smtp-host").value     = cfg.smtp_host     || "";
     document.getElementById("cfg-smtp-port").value     = cfg.smtp_port     || 587;
     document.getElementById("cfg-smtp-user").value     = cfg.smtp_user     || "";
-    document.getElementById("cfg-smtp-password").value = "";  // nunca preenchido
+    document.getElementById("cfg-smtp-password").value = "";
     document.getElementById("cfg-schedule-time").value = cfg.schedule_time || "08:00";
     document.getElementById("cfg-enabled").checked     = !!cfg.enabled;
 

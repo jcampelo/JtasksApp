@@ -8,9 +8,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import date, datetime
 
-DATA_FILE   = os.path.join(os.path.dirname(__file__), "data.json")
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 PORT = 8080
+
+SUPABASE_URL = "https://mvlpqcziismuwvdgbyoi.supabase.co"
+SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bHBxY3ppaXNtdXd2ZGdieW9pIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDM4OTIxOCwiZXhwIjoyMDg5OTY1MjE4fQ.QS_cBXQAItPhBaVx5Xa6i8ZiIISFHxCsD-m5Oka9CMM"
 
 
 # ── CONFIG ──────────────────────────────────────────────────────────
@@ -29,25 +31,50 @@ def save_config(cfg):
         json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 
+# ── SUPABASE DATA ────────────────────────────────────────────────────
+
+def fetch_tasks_for_email():
+    import urllib.request, urllib.error
+    url = SUPABASE_URL + "/rest/v1/tasks?status=eq.active&select=*,task_updates(*)"
+    req = urllib.request.Request(url, headers={
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "Content-Type": "application/json"
+    })
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.loads(r.read().decode())
+
+
 # ── EMAIL ────────────────────────────────────────────────────────────
 
 def build_email_html():
-    """Lê data.json e monta o HTML do resumo de atividades."""
-    if not os.path.exists(DATA_FILE):
-        active, completed = [], []
-    else:
-        try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            active    = data.get("today", {}).get("active", [])
-            completed = data.get("today", {}).get("completed", [])
-        except Exception:
-            active, completed = [], []
+    """Busca dados do Supabase e monta o HTML do resumo de atividades."""
+    try:
+        tasks = fetch_tasks_for_email()
+        active = [t for t in tasks if t.get("status") == "active"]
+    except Exception as e:
+        print(f"[email] Erro ao buscar tarefas do Supabase: {e}")
+        active = []
+
+    # Concluídas hoje (busca separada para tarefas concluídas hoje)
+    completed = []
+    try:
+        import urllib.request
+        today_iso = date.today().isoformat()
+        url = SUPABASE_URL + f"/rest/v1/tasks?status=eq.completed&completed_at=gte.{today_iso}T00:00:00&select=*"
+        req = urllib.request.Request(url, headers={
+            "apikey": SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": "application/json"
+        })
+        with urllib.request.urlopen(req, timeout=10) as r:
+            completed = json.loads(r.read().decode())
+    except Exception as e:
+        print(f"[email] Erro ao buscar concluídas do Supabase: {e}")
 
     today_iso = date.today().isoformat()
     today_dt  = date.today()
 
-    # Formata data por extenso
     MESES = ["janeiro","fevereiro","março","abril","maio","junho",
              "julho","agosto","setembro","outubro","novembro","dezembro"]
     DIAS  = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira",
@@ -78,7 +105,6 @@ def build_email_html():
     total = len(active) + len(completed)
     taxa  = f"{round(len(completed)/total*100)}%" if total else "—"
 
-    # Helpers de HTML
     def pri_badge(p):
         colors = {"critica": ("#fff1f2","#e63946","🔴 Crítica"),
                   "urgente": ("#fff7ed","#ea580c","🟡 Urgente"),
@@ -101,7 +127,6 @@ def build_email_html():
           </td>
         </tr>"""
 
-    # Seção de alertas
     alert_html = ""
     if overdue or due_soon:
         rows = ""
@@ -119,7 +144,6 @@ def build_email_html():
           </td>
         </tr>"""
 
-    # Seção prioridades
     def pri_row(icon, label, count, color):
         return f"""
         <tr>
@@ -299,15 +323,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.path in ("/", "/index.html"):
             self._send_file(os.path.join(os.path.dirname(__file__), "index.html"), "text/html; charset=utf-8")
 
-        elif self.path == "/data":
-            if not os.path.exists(DATA_FILE):
-                self._send_json(200, {}); return
-            try:
-                with open(DATA_FILE, "r", encoding="utf-8") as f:
-                    self._send_json(200, json.load(f))
-            except Exception:
-                self._send_json(500, {"error": "read_failed"})
-
         elif self.path == "/config":
             cfg = load_config()
             safe = {k: v for k, v in cfg.items() if k != "smtp_password"}
@@ -318,20 +333,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
-        if self.path == "/data":
-            body = self._read_body()
-            try:
-                data = json.loads(body)
-            except Exception:
-                self._send_json(400, {"error": "invalid_json"}); return
-            try:
-                with open(DATA_FILE, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                self._send_json(200, {"ok": True})
-            except Exception:
-                self._send_json(500, {"error": "write_failed"})
-
-        elif self.path == "/config":
+        if self.path == "/config":
             body = self._read_body()
             try:
                 new_cfg = json.loads(body)
