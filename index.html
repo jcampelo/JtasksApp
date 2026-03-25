@@ -1367,18 +1367,35 @@ async function applyPresetsToday() {
 }
 
 // ── EXPORT EXCEL ───────────────────────────────────────
+function taskToRow(t) {
+  const updates = (t.task_updates || [])
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((u, i) => `[${i + 1}] ${formatDateTime(u.created_at)}: ${u.text}`)
+    .join("\n");
+  const STATUS_LABEL = { active: "Ativa", completed: "Concluída", discarded: "Descartada" };
+  return {
+    "Nome": t.name,
+    "Projeto": t.project || "",
+    "Prioridade": PRIORITY_LABEL[t.priority] || t.priority,
+    "Status": STATUS_LABEL[t.status] || t.status,
+    "Deadline": t.deadline || "",
+    "Criada em": formatDateTime(t.created_at),
+    "Concluída em": t.completed_at ? formatDateTime(t.completed_at) : "",
+    "Atualizações": updates
+  };
+}
+
 function exportExcel() {
   const sorted = [...getCompleted()].sort((a, b) =>
     (a.completed_at || "").localeCompare(b.completed_at || "")
   );
-  const rows = sorted.map(t => ({
-    "Nome": t.name,
-    "Projeto": t.project || "",
-    "Prioridade": PRIORITY_LABEL[t.priority] || t.priority,
-    "Criada em": formatDateTime(t.created_at),
-    "Concluída em": formatDateTime(t.completed_at)
-  }));
+  const rows = sorted.map(taskToRow);
   const ws = XLSX.utils.json_to_sheet(rows);
+  // Ajusta largura das colunas
+  ws["!cols"] = [
+    { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
+    { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 60 }
+  ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Concluídas");
   XLSX.writeFile(wb, `jabil-tasks-${localDateString()}.xlsx`);
@@ -1389,13 +1406,12 @@ function exportExcelAtivas() {
   const sorted = [...getActive()].sort((a, b) =>
     (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
   );
-  const rows = sorted.map(t => ({
-    "Nome": t.name,
-    "Projeto": t.project || "",
-    "Prioridade": PRIORITY_LABEL[t.priority] || t.priority,
-    "Criada em": formatDateTime(t.created_at)
-  }));
+  const rows = sorted.map(taskToRow);
   const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
+    { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 60 }
+  ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Ativas");
   XLSX.writeFile(wb, `jabil-tasks-ativas-${localDateString()}.xlsx`);
