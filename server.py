@@ -34,8 +34,15 @@ def save_config(cfg):
 # ── SUPABASE DATA ────────────────────────────────────────────────────
 
 def fetch_tasks_for_email():
-    import urllib.request, urllib.error
-    url = SUPABASE_URL + "/rest/v1/tasks?status=eq.active&select=*,task_updates(*)"
+    return _supabase_get("/rest/v1/tasks?status=eq.active&select=*,task_updates(*)")
+
+
+# ── EMAIL ────────────────────────────────────────────────────────────
+
+def _supabase_get(path):
+    """Helper para GET no Supabase REST API."""
+    import urllib.request
+    url = SUPABASE_URL + path
     req = urllib.request.Request(url, headers={
         "apikey": SUPABASE_SERVICE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
@@ -45,36 +52,31 @@ def fetch_tasks_for_email():
         return json.loads(r.read().decode())
 
 
-# ── EMAIL ────────────────────────────────────────────────────────────
-
 def build_email_html():
-    """Busca dados do Supabase e monta o HTML do resumo de atividades."""
-    try:
-        tasks = fetch_tasks_for_email()
-        active = [t for t in tasks if t.get("status") == "active"]
-    except Exception as e:
-        print(f"[email] Erro ao buscar tarefas do Supabase: {e}")
-        active = []
-
-    # Concluídas hoje (busca separada para tarefas concluídas hoje)
-    completed = []
-    try:
-        import urllib.request
-        today_iso = date.today().isoformat()
-        url = SUPABASE_URL + f"/rest/v1/tasks?status=eq.completed&completed_at=gte.{today_iso}T00:00:00&select=*"
-        req = urllib.request.Request(url, headers={
-            "apikey": SUPABASE_SERVICE_KEY,
-            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
-            "Content-Type": "application/json"
-        })
-        with urllib.request.urlopen(req, timeout=10) as r:
-            completed = json.loads(r.read().decode())
-    except Exception as e:
-        print(f"[email] Erro ao buscar concluídas do Supabase: {e}")
-
+    """Busca dados do Supabase e monta o HTML completo do resumo de atividades."""
     today_iso = date.today().isoformat()
     today_dt  = date.today()
 
+    # ── Buscar dados ──
+    try:
+        active = _supabase_get("/rest/v1/tasks?status=eq.active&select=*,task_updates(*)&order=deadline.asc.nullslast")
+    except Exception as e:
+        print(f"[email] Erro ao buscar ativas: {e}")
+        active = []
+
+    try:
+        completed = _supabase_get(f"/rest/v1/tasks?status=eq.completed&completed_at=gte.{today_iso}T00:00:00&select=*")
+    except Exception as e:
+        print(f"[email] Erro ao buscar concluídas: {e}")
+        completed = []
+
+    try:
+        discarded = _supabase_get(f"/rest/v1/tasks?status=eq.discarded&select=*&updated_at=gte.{today_iso}T00:00:00")
+    except Exception as e:
+        print(f"[email] Erro ao buscar descartadas: {e}")
+        discarded = []
+
+    # ── Formatação de data ──
     MESES = ["janeiro","fevereiro","março","abril","maio","junho",
              "julho","agosto","setembro","outubro","novembro","dezembro"]
     DIAS  = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira",
@@ -82,7 +84,7 @@ def build_email_html():
     dia_semana = DIAS[today_dt.weekday()]
     data_fmt   = f"{dia_semana}, {today_dt.day} de {MESES[today_dt.month-1]} de {today_dt.year}"
 
-    # Classifica por deadline
+    # ── Classificação por deadline ──
     overdue  = []
     due_soon = []
     for task in active:
@@ -97,7 +99,7 @@ def build_email_html():
     overdue.sort(key=lambda x: x[1], reverse=True)
     due_soon.sort(key=lambda x: x[1])
 
-    # Contagem por prioridade
+    # ── Contagens ──
     criticas = [t for t in active if t.get("priority") == "critica"]
     urgentes = [t for t in active if t.get("priority") == "urgente"]
     normais  = [t for t in active if t.get("priority") == "normal"]
@@ -105,75 +107,199 @@ def build_email_html():
     total = len(active) + len(completed)
     taxa  = f"{round(len(completed)/total*100)}%" if total else "—"
 
+    # ── Agrupamento por projeto ──
+    proj_counts = {}
+    for t in active:
+        p = t.get("project") or "Sem projeto"
+        proj_counts[p] = proj_counts.get(p, 0) + 1
+
+    # ── Helpers HTML ──
+    SECTION_TITLE = 'style="font-size:0.82rem;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 12px;"'
+
     def pri_badge(p):
-        colors = {"critica": ("#fff1f2","#e63946","🔴 Crítica"),
-                  "urgente": ("#fff7ed","#ea580c","🟡 Urgente"),
-                  "normal":  ("#f1f5f9","#64748b","⚪ Normal")}
+        colors = {"critica": ("#fff1f2","#e63946","Critica"),
+                  "urgente": ("#fff7ed","#ea580c","Urgente"),
+                  "normal":  ("#f1f5f9","#64748b","Normal")}
         bg, color, label = colors.get(p, ("#f1f5f9","#64748b", p))
-        return f'<span style="background:{bg};color:{color};padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:700;">{label}</span>'
+        return f'<span style="background:{bg};color:{color};padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">{label}</span>'
 
-    def task_row(task, badge_text, badge_color):
-        name    = task.get("name","—")
-        project = task.get("project","")
-        pri     = task.get("priority","normal")
-        proj_html = f' &nbsp;<span style="color:#64748b;font-size:0.8rem;">📁 {project}</span>' if project else ""
-        return f"""
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-            <div style="font-weight:600;color:#1a1a2e;margin-bottom:4px;">{name}</div>
-            <div>{pri_badge(pri)}{proj_html}
-              &nbsp;<span style="background:{badge_color[0]};color:{badge_color[1]};padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:700;">{badge_text}</span>
-            </div>
-          </td>
-        </tr>"""
+    def fmt_date(iso_str):
+        if not iso_str:
+            return "—"
+        try:
+            dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+            return dt.strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            return iso_str[:10] if len(iso_str) >= 10 else iso_str
 
+    def fmt_deadline(dl):
+        if not dl:
+            return '<span style="color:#94a3b8;">—</span>'
+        diff = (date.fromisoformat(dl) - today_dt).days
+        d = date.fromisoformat(dl)
+        formatted = d.strftime("%d/%m/%Y")
+        if diff < 0:
+            return f'<span style="color:#e63946;font-weight:700;">{formatted} ({abs(diff)}d atraso)</span>'
+        elif diff == 0:
+            return f'<span style="color:#ea580c;font-weight:700;">{formatted} (hoje)</span>'
+        elif diff <= 3:
+            return f'<span style="color:#ea580c;">{formatted} ({diff}d)</span>'
+        return f'<span style="color:#1a1a2e;">{formatted} ({diff}d)</span>'
+
+    def get_last_update(task):
+        updates = task.get("task_updates") or []
+        if not updates:
+            return ""
+        updates.sort(key=lambda u: u.get("created_at",""), reverse=True)
+        last = updates[0]
+        text = last.get("text","")
+        if len(text) > 80:
+            text = text[:77] + "..."
+        dt = fmt_date(last.get("created_at"))
+        return f'<div style="margin-top:4px;padding:6px 8px;background:#f8fafc;border-left:3px solid #3b82f6;border-radius:0 4px 4px 0;font-size:0.78rem;color:#475569;"><strong>Ultima nota ({dt}):</strong> {text}</div>'
+
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 1: ALERTAS DE PRAZO
+    # ══════════════════════════════════════════════════════════════════
     alert_html = ""
     if overdue or due_soon:
         rows = ""
         for task, days in overdue:
-            rows += task_row(task, f"⚠ {days}d em atraso", ("#fff1f2","#e63946"))
+            name = task.get("name","—")
+            project = task.get("project","")
+            proj_html = f' <span style="color:#64748b;font-size:0.78rem;">| {project}</span>' if project else ""
+            rows += f'''<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:600;color:#1a1a2e;">{name}{proj_html}</div>
+                <div style="margin-top:2px;">{pri_badge(task.get("priority","normal"))}
+                <span style="background:#fff1f2;color:#e63946;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;margin-left:4px;">{days}d em atraso</span></div>
+            </td></tr>'''
         for task, days in due_soon:
-            label = "🔔 Vence hoje" if days == 0 else f"⏰ {days}d restantes"
-            rows += task_row(task, label, ("#fff7ed","#ea580c"))
+            name = task.get("name","—")
+            project = task.get("project","")
+            proj_html = f' <span style="color:#64748b;font-size:0.78rem;">| {project}</span>' if project else ""
+            label = "Vence hoje" if days == 0 else f"{days}d restantes"
+            rows += f'''<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:600;color:#1a1a2e;">{name}{proj_html}</div>
+                <div style="margin-top:2px;">{pri_badge(task.get("priority","normal"))}
+                <span style="background:#fff7ed;color:#ea580c;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;margin-left:4px;">{label}</span></div>
+            </td></tr>'''
 
-        alert_html = f"""
-        <tr>
-          <td style="padding:20px 28px 0;">
-            <h2 style="font-size:0.82rem;color:#e63946;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 12px;">⚠ Alertas de Prazo</h2>
+        alert_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}><span style="color:#e63946;">⚠ Alertas de Prazo</span></h2>
             <table width="100%" cellpadding="0" cellspacing="0">{rows}</table>
-          </td>
-        </tr>"""
+        </td></tr>'''
 
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 2: LISTA DE ATIVIDADES ATIVAS (detalhada)
+    # ══════════════════════════════════════════════════════════════════
+    active_list_html = ""
+    if active:
+        rows = ""
+        for t in active:
+            name = t.get("name","—")
+            project = t.get("project","")
+            proj_html = f' <span style="color:#64748b;font-size:0.78rem;">| {project}</span>' if project else ""
+            dl_html = fmt_deadline(t.get("deadline"))
+            update_html = get_last_update(t)
+            rows += f'''<tr><td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:600;color:#1a1a2e;margin-bottom:3px;">{name}{proj_html}</div>
+                <div style="margin-bottom:2px;">{pri_badge(t.get("priority","normal"))}
+                <span style="font-size:0.78rem;color:#64748b;margin-left:8px;">Deadline: {dl_html}</span></div>
+                <div style="font-size:0.78rem;color:#94a3b8;">Criada em: {fmt_date(t.get("created_at"))}</div>
+                {update_html}
+            </td></tr>'''
+
+        active_list_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}>📋 Atividades Ativas ({len(active)})</h2>
+            <table width="100%" cellpadding="0" cellspacing="0">{rows}</table>
+        </td></tr>'''
+
+    else:
+        active_list_html = f'''<tr><td style="padding:20px 28px;text-align:center;color:#94a3b8;font-size:0.9rem;">
+            Nenhuma atividade ativa no momento.
+        </td></tr>'''
+
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 3: CONCLUÍDAS HOJE
+    # ══════════════════════════════════════════════════════════════════
+    completed_html = ""
+    if completed:
+        rows = ""
+        for t in completed:
+            name = t.get("name","—")
+            project = t.get("project","")
+            proj_html = f' <span style="color:#64748b;font-size:0.78rem;">| {project}</span>' if project else ""
+            rows += f'''<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:600;color:#1a1a2e;">{name}{proj_html}</div>
+                <div style="margin-top:2px;">{pri_badge(t.get("priority","normal"))}
+                <span style="font-size:0.78rem;color:#22c55e;margin-left:8px;font-weight:600;">Concluida em {fmt_date(t.get("completed_at"))}</span></div>
+            </td></tr>'''
+
+        completed_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}><span style="color:#22c55e;">✅</span> Concluidas Hoje ({len(completed)})</h2>
+            <table width="100%" cellpadding="0" cellspacing="0">{rows}</table>
+        </td></tr>'''
+
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 4: DESCARTADAS HOJE
+    # ══════════════════════════════════════════════════════════════════
+    discarded_html = ""
+    if discarded:
+        rows = ""
+        for t in discarded:
+            name = t.get("name","—")
+            project = t.get("project","")
+            proj_html = f' <span style="color:#64748b;font-size:0.78rem;">| {project}</span>' if project else ""
+            rows += f'''<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
+                <div style="color:#1a1a2e;text-decoration:line-through;">{name}{proj_html}</div>
+                <div style="margin-top:2px;">{pri_badge(t.get("priority","normal"))}</div>
+            </td></tr>'''
+
+        discarded_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}>🗑️ Descartadas Hoje ({len(discarded)})</h2>
+            <table width="100%" cellpadding="0" cellspacing="0">{rows}</table>
+        </td></tr>'''
+
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 5: RESUMO POR PROJETO
+    # ══════════════════════════════════════════════════════════════════
+    proj_html = ""
+    if proj_counts:
+        rows = ""
+        for proj_name, count in sorted(proj_counts.items(), key=lambda x: x[1], reverse=True):
+            rows += f'''<tr><td style="padding:6px 0;border-bottom:1px solid #f8fafc;">
+                <span style="color:#1a1a2e;font-weight:600;">📁 {proj_name}</span>
+                <span style="float:right;font-weight:800;color:#3b82f6;">{count}</span>
+            </td></tr>'''
+
+        proj_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}>📁 Por Projeto</h2>
+            <table width="100%" cellpadding="0" cellspacing="0">{rows}</table>
+        </td></tr>'''
+
+    # ══════════════════════════════════════════════════════════════════
+    # SEÇÃO 6: POR PRIORIDADE
+    # ══════════════════════════════════════════════════════════════════
     def pri_row(icon, label, count, color):
-        return f"""
-        <tr>
-          <td style="padding:6px 0;border-bottom:1px solid #f8fafc;">
+        return f'''<tr><td style="padding:6px 0;border-bottom:1px solid #f8fafc;">
             <span style="color:{color};font-weight:700;">{icon} {label}</span>
             <span style="float:right;font-weight:800;color:#1a1a2e;">{count}</span>
-          </td>
-        </tr>"""
+        </td></tr>'''
 
     pri_html = ""
     if active:
-        pri_html = f"""
-        <tr>
-          <td style="padding:20px 28px 0;">
-            <h2 style="font-size:0.82rem;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 12px;">Por Prioridade</h2>
+        pri_html = f'''<tr><td style="padding:20px 28px 0;">
+            <h2 {SECTION_TITLE}>Por Prioridade</h2>
             <table width="100%" cellpadding="0" cellspacing="0">
-              {pri_row("🔴","Crítica", len(criticas),"#e63946")}
+              {pri_row("🔴","Critica", len(criticas),"#e63946")}
               {pri_row("🟡","Urgente", len(urgentes),"#ea580c")}
               {pri_row("⚪","Normal",  len(normais), "#64748b")}
             </table>
-          </td>
-        </tr>"""
-    else:
-        pri_html = """
-        <tr>
-          <td style="padding:20px 28px;text-align:center;color:#94a3b8;font-size:0.9rem;">
-            Nenhuma atividade ativa no momento.
-          </td>
-        </tr>"""
+        </td></tr>'''
 
+    # ══════════════════════════════════════════════════════════════════
+    # MONTAGEM FINAL
+    # ══════════════════════════════════════════════════════════════════
     html = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -192,13 +318,10 @@ def build_email_html():
         </td>
       </tr>
 
-      {alert_html}
-      {pri_html}
-
-      <!-- TOTAIS -->
+      <!-- RESUMO DO DIA -->
       <tr>
         <td style="padding:20px 28px 0;">
-          <h2 style="font-size:0.82rem;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 12px;">Resumo do Dia</h2>
+          <h2 {SECTION_TITLE}>Resumo do Dia</h2>
         </td>
       </tr>
       <tr>
@@ -212,7 +335,11 @@ def build_email_html():
               </td>
               <td style="text-align:center;padding:16px 8px;border-left:1px solid #e2e8f0;">
                 <div style="font-size:1.8rem;font-weight:800;color:#22c55e;line-height:1;">{len(completed)}</div>
-                <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">Concluídas</div>
+                <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">Concluidas</div>
+              </td>
+              <td style="text-align:center;padding:16px 8px;border-left:1px solid #e2e8f0;">
+                <div style="font-size:1.8rem;font-weight:800;color:#64748b;line-height:1;">{len(discarded)}</div>
+                <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">Descartadas</div>
               </td>
               <td style="text-align:center;padding:16px 8px;border-left:1px solid #e2e8f0;">
                 <div style="font-size:1.8rem;font-weight:800;color:#3b82f6;line-height:1;">{taxa}</div>
@@ -223,11 +350,21 @@ def build_email_html():
         </td>
       </tr>
 
+      {alert_html}
+      {active_list_html}
+      {completed_html}
+      {discarded_html}
+      {proj_html}
+      {pri_html}
+
       <!-- FOOTER -->
       <tr>
         <td style="background:#1a1a2e;padding:14px 28px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.5);font-size:0.78rem;margin:0 0 6px;">
+            <a href="http://129.121.48.36:8080" style="color:#3b82f6;text-decoration:none;font-weight:600;">Abrir Jabil Notes</a>
+          </p>
           <p style="color:rgba(255,255,255,0.35);font-size:0.72rem;margin:0;">
-            Jabil Notes — relatório gerado automaticamente em {today_iso}
+            Relatorio gerado automaticamente em {today_iso}
           </p>
         </td>
       </tr>
