@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Jtasks{% endblock %}
+
+{% block content %}
+{% include "partials/header.html" %}
+{% include "partials/tabs.html" %}
+
+<main>
+  <!-- Ativas -->
+  <div id="panel-ativas" class="tab-panel active">
+    <div id="panel-ativas-content">
+      <div class="empty-state"><div class="icon">⏳</div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Concluídas -->
+  <div id="panel-concluidas" class="tab-panel"></div>
+
+  <!-- Projetos -->
+  <div id="panel-projetos" class="tab-panel"></div>
+
+  <!-- Performance -->
+  <div id="panel-performance" class="tab-panel">
+    {% include "partials/performance/performance_tab.html" %}
+  </div>
+
+  <!-- Notificações -->
+  <div id="panel-notificacoes" class="tab-panel"></div>
+</main>
+
+<!-- Modal container (carregado via HTMX) -->
+<div id="modal-container"></div>
+
+{% include "partials/toast.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+  // Carrega as tarefas ativas na inicialização
+  document.addEventListener('DOMContentLoaded', function() {
+    htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
+  });
+</script>
+{% endblock %}

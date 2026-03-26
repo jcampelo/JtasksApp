@@ -1,0 +1,58 @@
+<div class="notify-status-card">
+  <div>
+    {% if config.enabled and config.schedule_time %}
+      <span style="color:#22c55e;font-weight:600;">✅ Agendado para {{ config.schedule_time }} diariamente</span>
+    {% elif config.email_to %}
+      <span style="color:var(--text-muted);">⏸ Envio automático desativado</span>
+    {% else %}
+      <span style="color:var(--text-muted);">⚙️ Configure o email abaixo...</span>
+    {% endif %}
+  </div>
+  <button class="btn-send-now"
+          hx-post="/notify/send"
+          hx-target="#notify-status-msg"
+          hx-swap="innerHTML">
+    Enviar agora
+  </button>
+</div>
+<div id="notify-status-msg" style="margin-bottom:12px;font-size:0.85rem;min-height:20px;"></div>
+
+<div class="notify-config-card">
+  <h3>Configuração SMTP</h3>
+  <form hx-post="/notify/config"
+        hx-target="#notify-status-msg"
+        hx-swap="innerHTML">
+    <div class="notify-grid">
+      <div class="notify-field">
+        <label>Destinatário</label>
+        <input type="email" name="email_to" value="{{ config.email_to or '' }}" placeholder="voce@empresa.com" />
+      </div>
+      <div class="notify-field">
+        <label>Horário de envio</label>
+        <input type="time" name="schedule_time" value="{{ config.schedule_time or '08:00' }}" />
+      </div>
+      <div class="notify-field">
+        <label>Servidor SMTP</label>
+        <input type="text" name="smtp_host" value="{{ config.smtp_host or '' }}" placeholder="smtp.gmail.com" />
+      </div>
+      <div class="notify-field">
+        <label>Porta</label>
+        <input type="number" name="smtp_port" value="{{ config.smtp_port or 587 }}" />
+      </div>
+      <div class="notify-field">
+        <label>Usuário SMTP</label>
+        <input type="email" name="smtp_user" value="{{ config.smtp_user or '' }}" placeholder="conta@gmail.com" />
+      </div>
+      <div class="notify-field">
+        <label>Senha{% if config.has_password %} (preenchida){% endif %}</label>
+        <input type="password" name="smtp_password" placeholder="{% if config.has_password %}Deixe em branco para manter{% else %}App Password{% endif %}" />
+      </div>
+    </div>
+    <div class="notify-check-row">
+      <input type="checkbox" name="enabled" id="cfg-enabled" value="1"
+             {% if config.enabled %}checked{% endif %} />
+      <label for="cfg-enabled">Habilitar envio automático diário</label>
+    </div>
+    <button type="submit" class="btn-save-config">Salvar configuração</button>
+  </form>
+</div>

@@ -1,5 +1,5 @@
 -- =============================================================
--- Jabil Notes — Supabase Setup
+-- Jtasks — Supabase Setup
 -- Execute este arquivo no SQL Editor do Supabase:
 -- painel.supabase.com → seu projeto → SQL Editor → New query
 -- =============================================================

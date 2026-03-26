@@ -1,0 +1,28 @@
+<div class="completed-header">
+  <h2>Concluídas ({{ tasks | length }})</h2>
+  <div style="display:flex;gap:8px;">
+    <a href="/export/active" class="btn-export">⬇ Ativas (.xlsx)</a>
+    <a href="/export/completed" class="btn-export">⬇ Concluídas (.xlsx)</a>
+  </div>
+</div>
+
+{% if tasks %}
+  {% for task in tasks %}
+  <div class="task-item completed {{ task.priority }}">
+    <div class="task-info">
+      <div class="task-name">{{ task.name }}</div>
+      <div class="task-meta">
+        {% if task.project %}<span class="task-project">{{ task.project }}</span>{% endif %}
+        <span style="color:var(--text-muted);font-size:0.75rem;">
+          Concluída {{ task.completed_fmt }}
+        </span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="icon">📭</div>
+    Nenhuma tarefa concluída ainda.
+  </div>
+{% endif %}

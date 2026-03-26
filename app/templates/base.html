@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Jtasks{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+  <script>
+    (function() {
+      var t = localStorage.getItem("jtasks-theme");
+      if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    })();
+  </script>
+</head>
+<body>
+  {% block content %}{% endblock %}
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2/dist/htmx.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+  {% block scripts %}{% endblock %}
+
+  <!-- Toast global listener -->
+  <script>
+    document.body.addEventListener("showToast", function(e) {
+      var msg = e.detail && e.detail.value ? e.detail.value : e.detail;
+      var isError = e.detail && e.detail.error;
+      var t = document.getElementById("toast");
+      if (!t) return;
+      t.textContent = msg;
+      t.className = "show" + (isError ? " error" : "");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(function() { t.className = ""; }, 3000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!-- Formulário adicionar tarefa -->
+<div class="add-form">
+  <form id="add-task-form"
+        hx-post="/tasks"
+        hx-target="#task-list-body"
+        hx-swap="innerHTML"
+        hx-on::after-request="if(event.detail.successful) this.reset()">
+    <div class="field full">
+      <label>Atividade</label>
+      <textarea name="name" placeholder="Descreva a atividade..." maxlength="120" required
+                onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();this.closest('form').requestSubmit();}"></textarea>
+      <span class="error-msg" id="err-name"></span>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Projeto</label>
+        <select name="project" id="task-project-select">
+          <option value="">— Selecione —</option>
+          {% for proj in projects %}
+          <option value="{{ proj.name }}">{{ proj.name }}</option>
+          {% endfor %}
+        </select>
+        <span class="error-msg" id="err-project"></span>
+      </div>
+      <div class="field field-priority">
+        <label>Prioridade</label>
+        <select name="priority">
+          <option value="normal">⚪ Normal</option>
+          <option value="urgente">🟡 Urgente</option>
+          <option value="critica">🔴 Crítica</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Prazo</label>
+        <input name="deadline" type="date" id="task-deadline" />
+        <span class="error-msg" id="err-deadline"></span>
+      </div>
+      <button type="submit" class="btn-add">+ Adicionar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Lista de tarefas -->
+<div id="task-list-body">
+  {% set priorities = [('critica', '🔴 Crítica'), ('urgente', '🟡 Urgente'), ('normal', '⚪ Normal')] %}
+  {% set has_any = namespace(value=false) %}
+
+  {% for pri_key, pri_label in priorities %}
+    {% set group = tasks | selectattr('priority', 'equalto', pri_key) | list %}
+    {% if group %}
+      {% set has_any.value = true %}
+      <div class="priority-group">
+        <div class="priority-header">{{ pri_label }} ({{ group | length }})</div>
+        {% for task in group %}
+          {% include "partials/tasks/task_item_active.html" %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if not has_any.value %}
+    {% include "partials/tasks/empty_state.html" %}
+  {% endif %}
+</div>
+
+<!-- Seletor de projetos OOB sync -->
+<select id="task-project-select" hx-swap-oob="true">
+  <option value="">— Selecione —</option>
+  {% for proj in projects %}
+  <option value="{{ proj.name }}">{{ proj.name }}</option>
+  {% endfor %}
+</select>

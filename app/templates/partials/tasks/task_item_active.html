@@ -1,0 +1,48 @@
+<div class="task-item {{ task.priority }}" id="task-{{ task.id }}">
+  <div class="task-info">
+    <div class="task-name">{{ task.name }}</div>
+    <div class="task-meta">
+      {% if task.project %}
+        <span class="task-project">{{ task.project }}</span>
+      {% endif %}
+      {% if task.days_badge %}
+        {{ task.days_badge | safe }}
+      {% endif %}
+      <span style="color:var(--text-muted);font-size:0.75rem;">
+        Criada {{ task.created_fmt }}
+      </span>
+    </div>
+  </div>
+  <div class="task-actions">
+    <!-- Updates -->
+    <button class="btn-updates"
+            hx-get="/tasks/{{ task.id }}/updates"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            title="Atualizações">
+      💬
+      {% if task.update_count > 0 %}
+        <span class="update-count">{{ task.update_count }}</span>
+      {% endif %}
+    </button>
+    <!-- Editar -->
+    <button class="btn-edit"
+            hx-get="/tasks/{{ task.id }}/edit-form"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            title="Editar">✏️</button>
+    <!-- Concluir -->
+    <button class="btn-complete"
+            hx-get="/tasks/{{ task.id }}/complete-form"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            title="Concluir">✓</button>
+    <!-- Descartar -->
+    <button class="btn-discard"
+            hx-post="/tasks/{{ task.id }}/discard"
+            hx-target="#task-{{ task.id }}"
+            hx-swap="outerHTML"
+            hx-confirm="Descartar esta tarefa?"
+            title="Descartar">🗑</button>
+  </div>
+</div>

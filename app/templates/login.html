@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Login — Jtasks{% endblock %}
+
+{% block content %}
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <h1>Jtasks</h1>
+      <span class="header-version">v02</span>
+    </div>
+    <div class="login-subtitle">Faça login para continuar</div>
+
+    <form hx-post="/auth/login"
+          hx-target="#login-form-inner"
+          hx-swap="outerHTML"
+          id="login-form-inner">
+      <div class="login-field">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email"
+               placeholder="voce@empresa.com" autocomplete="email" required />
+      </div>
+      <div class="login-field">
+        <label for="login-password">Senha</label>
+        <input id="login-password" name="password" type="password"
+               placeholder="Sua senha" autocomplete="current-password" required />
+      </div>
+
+      {% if error %}
+      <div id="login-error">{{ error }}</div>
+      {% else %}
+      <div id="login-error"></div>
+      {% endif %}
+
+      <button type="submit" class="login-btn">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+<div class="perf-grid" id="perf-stats-row">
+  <div class="perf-card">
+    <h3>Resumo</h3>
+    <div class="perf-stat-row">
+      <div class="perf-stat">
+        <div class="perf-stat-value" id="perf-active" style="color:#e63946;">—</div>
+        <div class="perf-stat-label">Ativas</div>
+      </div>
+      <div class="perf-stat">
+        <div class="perf-stat-value" id="perf-completed" style="color:#22c55e;">—</div>
+        <div class="perf-stat-label">Concluídas</div>
+      </div>
+      <div class="perf-stat">
+        <div class="perf-stat-value" id="perf-rate" style="color:#3b82f6;">—</div>
+        <div class="perf-stat-label">Taxa</div>
+      </div>
+    </div>
+  </div>
+  <div class="perf-card">
+    <h3>Conclusão</h3>
+    <div class="perf-chart-wrap">
+      <canvas id="chart-donut"></canvas>
+    </div>
+  </div>
+  <div class="perf-card perf-grid-full">
+    <h3>Por Prioridade</h3>
+    <div class="perf-chart-wrap">
+      <canvas id="chart-priority"></canvas>
+    </div>
+  </div>
+  <div class="perf-card perf-grid-full">
+    <h3>Por Projeto</h3>
+    <div class="perf-chart-wrap">
+      <canvas id="chart-project"></canvas>
+    </div>
+  </div>
+</div>

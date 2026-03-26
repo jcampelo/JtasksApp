@@ -1,0 +1,20 @@
+<div class="preset-list" id="presets-list">
+  {% if presets %}
+    {% for p in presets %}
+    <div class="preset-item" id="preset-{{ p.id }}">
+      <div class="preset-info">
+        <div class="preset-name">{{ p.name }}</div>
+        <div class="preset-sub">
+          {% if p.project %}{{ p.project }} · {% endif %}{{ p.priority | capitalize }}
+        </div>
+      </div>
+      <button class="btn-remove"
+              hx-delete="/presets/{{ p.id }}"
+              hx-target="#preset-{{ p.id }}"
+              hx-swap="outerHTML">Remover</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="modal-empty">Nenhum preset cadastrado.</div>
+  {% endif %}
+</div>

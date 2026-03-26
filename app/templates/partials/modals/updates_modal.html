@@ -1,0 +1,26 @@
+<div class="modal-backdrop show" id="modal-backdrop"
+     onclick="if(event.target===this)document.getElementById('modal-container').innerHTML=''">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>💬 Notas / Atualizações</h2>
+      <button class="btn-close" onclick="document.getElementById('modal-container').innerHTML=''">×</button>
+    </div>
+    <p class="modal-updates-subtitle">{{ task.name }}</p>
+
+    {% include "partials/modals/updates_list.html" %}
+
+    <hr class="modal-divider" style="margin-top:16px;" />
+    <h3>Adicionar nota</h3>
+    <form class="modal-form"
+          hx-post="/tasks/{{ task.id }}/updates"
+          hx-target="#updates-list"
+          hx-swap="outerHTML"
+          hx-on::after-request="if(event.detail.successful)this.reset()">
+      <div class="field">
+        <textarea name="text" placeholder="Digite sua nota..." maxlength="300" required
+                  onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();this.closest('form').requestSubmit();}"></textarea>
+      </div>
+      <button type="submit" class="btn-add-preset">Adicionar nota</button>
+    </form>
+  </div>
+</div>

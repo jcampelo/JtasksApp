@@ -1,0 +1,46 @@
+<div class="modal-backdrop show" id="modal-backdrop"
+     onclick="if(event.target===this)document.getElementById('modal-container').innerHTML=''">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✏️ Editar Tarefa</h2>
+      <button class="btn-close" onclick="document.getElementById('modal-container').innerHTML=''">×</button>
+    </div>
+    <form class="modal-form"
+          hx-post="/tasks/{{ task.id }}/edit"
+          hx-target="#modal-container"
+          hx-swap="innerHTML">
+      <div class="field">
+        <label>Atividade</label>
+        <textarea name="name" maxlength="120" required>{{ task.name }}</textarea>
+      </div>
+      <div class="field">
+        <label>Projeto</label>
+        <select name="project">
+          <option value="">— Sem projeto —</option>
+          {% for proj in projects %}
+          <option value="{{ proj.name }}" {% if task.project == proj.name %}selected{% endif %}>{{ proj.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Prioridade</label>
+        <select name="priority">
+          <option value="normal" {% if task.priority == 'normal' %}selected{% endif %}>⚪ Normal</option>
+          <option value="urgente" {% if task.priority == 'urgente' %}selected{% endif %}>🟡 Urgente</option>
+          <option value="critica" {% if task.priority == 'critica' %}selected{% endif %}>🔴 Crítica</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Prazo</label>
+        <input type="date" name="deadline" value="{{ task.deadline or '' }}" />
+      </div>
+      {% if error %}<div class="modal-err">{{ error }}</div>{% endif %}
+      <button type="submit" class="modal-confirm-btn">Salvar alterações</button>
+    </form>
+  </div>
+</div>
+<script>
+  document.body.addEventListener('refreshTasks', function() {
+    htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
+  });
+</script>

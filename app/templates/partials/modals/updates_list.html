@@ -1,0 +1,19 @@
+<div id="updates-list">
+  {% if updates %}
+    {% for u in updates %}
+    <div class="update-item" id="update-{{ u.id }}">
+      <div class="update-item-body">
+        <div class="update-item-text">{{ u.text }}</div>
+        <div class="update-item-meta">{{ u.created_fmt }}</div>
+      </div>
+      <button class="btn-del-update"
+              hx-delete="/tasks/{{ task_id }}/updates/{{ u.id }}"
+              hx-target="#updates-list"
+              hx-swap="outerHTML"
+              title="Remover nota">🗑</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="modal-empty">Nenhuma nota ainda.</div>
+  {% endif %}
+</div>
