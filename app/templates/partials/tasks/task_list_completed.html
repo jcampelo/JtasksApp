@@ -8,7 +8,7 @@
 
 {% if tasks %}
   {% for task in tasks %}
-  <div class="task-item completed {{ task.priority }}">
+  <div class="task-item completed {{ task.priority }}" id="completed-task-{{ task.id }}">
     <div class="task-info">
       <div class="task-name">{{ task.name }}</div>
       <div class="task-meta">
@@ -17,6 +17,16 @@
           Concluída {{ task.completed_fmt }}
         </span>
       </div>
+    </div>
+    <div class="task-actions">
+      <button class="task-btn reopen-btn"
+              title="Resgatar tarefa"
+              hx-post="/tasks/{{ task.id }}/reopen"
+              hx-target="#completed-task-{{ task.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Resgatar '{{ task.name }}' para ativas?">
+        ↩
+      </button>
     </div>
   </div>
   {% endfor %}

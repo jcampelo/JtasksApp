@@ -1,36 +1,75 @@
-<div class="perf-grid" id="perf-stats-row">
-  <div class="perf-card">
-    <h3>Resumo</h3>
-    <div class="perf-stat-row">
-      <div class="perf-stat">
-        <div class="perf-stat-value" id="perf-active" style="color:#e63946;">—</div>
-        <div class="perf-stat-label">Ativas</div>
-      </div>
-      <div class="perf-stat">
-        <div class="perf-stat-value" id="perf-completed" style="color:#22c55e;">—</div>
-        <div class="perf-stat-label">Concluídas</div>
-      </div>
-      <div class="perf-stat">
-        <div class="perf-stat-value" id="perf-rate" style="color:#3b82f6;">—</div>
-        <div class="perf-stat-label">Taxa</div>
-      </div>
+<!-- KPI Cards -->
+<div class="perf-kpis">
+  <div class="perf-kpi">
+    <div class="perf-kpi-icon" style="background:rgba(230,57,70,0.12);color:#e63946;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="perf-kpi-body">
+      <div class="perf-kpi-value" id="perf-active" style="color:#e63946;">—</div>
+      <div class="perf-kpi-label">Ativas</div>
     </div>
   </div>
+  <div class="perf-kpi">
+    <div class="perf-kpi-icon" style="background:rgba(34,197,94,0.12);color:#22c55e;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="perf-kpi-body">
+      <div class="perf-kpi-value" id="perf-completed" style="color:#22c55e;">—</div>
+      <div class="perf-kpi-label">Concluídas</div>
+    </div>
+  </div>
+  <div class="perf-kpi">
+    <div class="perf-kpi-icon" style="background:rgba(20,184,166,0.12);color:var(--accent);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
+    <div class="perf-kpi-body">
+      <div class="perf-kpi-value" id="perf-rate" style="color:var(--accent);">—</div>
+      <div class="perf-kpi-label">Taxa de conclusão</div>
+    </div>
+  </div>
+  <div class="perf-kpi">
+    <div class="perf-kpi-icon" style="background:rgba(148,163,184,0.12);color:var(--text-second);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    </div>
+    <div class="perf-kpi-body">
+      <div class="perf-kpi-value" id="perf-total" style="color:var(--text-second);">—</div>
+      <div class="perf-kpi-label">Total de tarefas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="perf-grid">
   <div class="perf-card">
-    <h3>Conclusão</h3>
-    <div class="perf-chart-wrap">
+    <div class="perf-card-header">
+      <h3>Conclusão</h3>
+      <span class="perf-card-sub">ativas vs concluídas</span>
+    </div>
+    <div class="perf-chart-wrap perf-donut-wrap">
       <canvas id="chart-donut"></canvas>
+      <div class="perf-donut-center">
+        <span id="perf-donut-pct">—</span>
+        <small>concluído</small>
+      </div>
     </div>
   </div>
-  <div class="perf-card perf-grid-full">
-    <h3>Por Prioridade</h3>
+
+  <div class="perf-card">
+    <div class="perf-card-header">
+      <h3>Por Prioridade</h3>
+      <span class="perf-card-sub">distribuição de tarefas</span>
+    </div>
     <div class="perf-chart-wrap">
       <canvas id="chart-priority"></canvas>
     </div>
   </div>
+
   <div class="perf-card perf-grid-full">
-    <h3>Por Projeto</h3>
-    <div class="perf-chart-wrap">
+    <div class="perf-card-header">
+      <h3>Por Projeto</h3>
+      <span class="perf-card-sub">ativas e concluídas por projeto</span>
+    </div>
+    <div class="perf-chart-wrap" style="max-height:none;">
       <canvas id="chart-project"></canvas>
     </div>
   </div>

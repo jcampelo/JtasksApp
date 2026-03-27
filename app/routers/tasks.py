@@ -54,6 +54,14 @@ def _enrich_task(task):
     task["days_badge"] = _days_badge(dl, today)
     task["created_fmt"] = _fmt_date(task.get("created_at"))
     task["completed_fmt"] = _fmt_datetime(task.get("completed_at"))
+    if dl:
+        try:
+            diff = (date.fromisoformat(dl) - today).days
+            task["urgency_class"] = "task-overdue" if diff < 0 else ("task-soon" if diff <= 3 else "")
+        except Exception:
+            task["urgency_class"] = ""
+    else:
+        task["urgency_class"] = ""
     return task
 
 
@@ -65,12 +73,12 @@ def _days_badge(deadline_str, today):
         diff = (dl - today).days
         formatted = dl.strftime("%d/%m/%Y")
         if diff < 0:
-            return f'<span class="days-badge overdue">{formatted} ({abs(diff)}d atraso)</span>'
+            return f'<span class="days-badge overdue">🔥 {formatted} ({abs(diff)}d atraso)</span>'
         elif diff == 0:
-            return f'<span class="days-badge today">{formatted} (hoje)</span>'
+            return f'<span class="days-badge today">⏰ {formatted} (hoje)</span>'
         elif diff <= 3:
-            return f'<span class="days-badge today">{formatted} ({diff}d)</span>'
-        return f'<span class="days-badge ok">{formatted} ({diff}d)</span>'
+            return f'<span class="days-badge soon">⚡ {formatted} ({diff}d)</span>'
+        return f'<span class="days-badge ok">📅 {formatted} ({diff}d)</span>'
     except Exception:
         return ""
 
@@ -186,7 +194,6 @@ async def complete_task(
 ):
     if isinstance(user, RedirectResponse):
         return user
-
     try:
         completed_dt = datetime.fromisoformat(completed_date).replace(
             hour=12, minute=0, second=0, tzinfo=timezone.utc
@@ -203,7 +210,7 @@ async def complete_task(
     response = HTMLResponse(content="""
       <script>document.getElementById('modal-container').innerHTML='';</script>
     """)
-    response.headers["HX-Trigger"] = '{"showToast":"Tarefa concluída! ✅","refreshTasks":"1"}'
+    response.headers["HX-Trigger"] = '{"showToast":"Tarefa concluida!","refreshTasks":"1"}'
     return response
 
 
@@ -260,6 +267,24 @@ async def list_completed(request: Request, user=Depends(get_current_user)):
         "partials/tasks/task_list_completed.html",
         {"request": request, "tasks": tasks},
     )
+
+
+@router.post("/tasks/{task_id}/reopen", response_class=HTMLResponse)
+async def reopen_task(task_id: str, request: Request, user=Depends(get_current_user)):
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        client = get_user_client(user["access_token"], user["refresh_token"])
+        client.table("tasks").update({
+            "status": "pending",
+            "completed_at": None,
+        }).eq("id", task_id).execute()
+    except Exception:
+        pass
+    # Remove o item da lista sem recarregar a página
+    response = HTMLResponse(content="")
+    response.headers["HX-Trigger"] = '{"showToast":"Tarefa reaberta!"}'
+    return response
 
 
 # ── Updates ──────────────────────────────────────────────────────────────────

@@ -1,10 +1,7 @@
 var _perfCharts = {};
 
 function destroyChart(key) {
-  if (_perfCharts[key]) {
-    _perfCharts[key].destroy();
-    delete _perfCharts[key];
-  }
+  if (_perfCharts[key]) { _perfCharts[key].destroy(); delete _perfCharts[key]; }
 }
 
 function isDark() {
@@ -12,11 +9,55 @@ function isDark() {
 }
 
 function chartColors() {
+  var dark = isDark();
   return {
-    text: isDark() ? '#94a3b8' : '#475569',
-    grid: isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    text:    dark ? '#94a3b8' : '#475569',
+    grid:    dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    tooltip: dark ? '#1e293b' : '#ffffff',
+    border:  dark ? '#334155' : '#e2e8f0',
   };
 }
+
+/* Animated count-up */
+function countUp(el, target, suffix) {
+  suffix = suffix || '';
+  var start = 0;
+  var duration = 700;
+  var startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    var ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+    el.textContent = Math.round(ease * target) + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* Gradient helper */
+function makeGradient(ctx, color1, color2) {
+  var g = ctx.createLinearGradient(0, 0, 0, 300);
+  g.addColorStop(0, color1);
+  g.addColorStop(1, color2);
+  return g;
+}
+
+/* Default animation options */
+var ANIM = { duration: 800, easing: 'easeOutQuart' };
+
+var baseTooltip = function() {
+  var c = chartColors();
+  return {
+    backgroundColor: c.tooltip,
+    titleColor: c.text,
+    bodyColor: c.text,
+    borderColor: c.border,
+    borderWidth: 1,
+    padding: 10,
+    cornerRadius: 8,
+    boxPadding: 4,
+  };
+};
 
 function loadPerformance() {
   fetch('/performance/data')
@@ -27,15 +68,23 @@ function loadPerformance() {
 
 function renderCharts(data) {
   var colors = chartColors();
-
-  // Atualiza stats
-  document.getElementById('perf-active').textContent = data.active_count;
-  document.getElementById('perf-completed').textContent = data.completed_count;
   var total = data.active_count + data.completed_count;
-  document.getElementById('perf-rate').textContent =
-    total > 0 ? Math.round(data.completed_count / total * 100) + '%' : '—';
+  var rate = total > 0 ? Math.round(data.completed_count / total * 100) : 0;
 
-  // ── Donut: concluídas vs ativas ──
+  /* ── KPI count-up ── */
+  var elActive    = document.getElementById('perf-active');
+  var elCompleted = document.getElementById('perf-completed');
+  var elRate      = document.getElementById('perf-rate');
+  var elTotal     = document.getElementById('perf-total');
+  var elPct       = document.getElementById('perf-donut-pct');
+
+  if (elActive)    countUp(elActive,    data.active_count);
+  if (elCompleted) countUp(elCompleted, data.completed_count);
+  if (elRate)      countUp(elRate,      rate, '%');
+  if (elTotal)     countUp(elTotal,     total);
+  if (elPct)       countUp(elPct,       rate, '%');
+
+  /* ── Donut ── */
   destroyChart('donut');
   var ctxD = document.getElementById('chart-donut');
   if (ctxD) {
@@ -46,23 +95,31 @@ function renderCharts(data) {
         datasets: [{
           data: [data.completed_count, data.active_count],
           backgroundColor: ['#22c55e', '#e63946'],
+          hoverBackgroundColor: ['#16a34a', '#c1121f'],
           borderWidth: 0,
+          hoverOffset: 6,
         }]
       },
       options: {
-        cutout: '70%',
+        cutout: '72%',
+        animation: ANIM,
         plugins: {
-          legend: { position: 'bottom', labels: { color: colors.text, font: { size: 12 } } }
+          legend: {
+            position: 'bottom',
+            labels: { color: colors.text, font: { size: 12 }, padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+          },
+          tooltip: baseTooltip(),
         }
       }
     });
   }
 
-  // ── Barras: por prioridade ──
+  /* ── Barras: por prioridade ── */
   destroyChart('priority');
   var ctxP = document.getElementById('chart-priority');
   if (ctxP) {
     var pri = data.priority_breakdown;
+    var ctxPCanvas = ctxP.getContext('2d');
     _perfCharts['priority'] = new Chart(ctxP, {
       type: 'bar',
       data: {
@@ -71,50 +128,107 @@ function renderCharts(data) {
           {
             label: 'Ativas',
             data: [pri.active.critica, pri.active.urgente, pri.active.normal],
-            backgroundColor: ['rgba(230,57,70,0.7)', 'rgba(244,162,97,0.7)', 'rgba(148,163,184,0.7)'],
+            backgroundColor: [
+              'rgba(230,57,70,0.8)', 'rgba(244,162,97,0.8)', 'rgba(148,163,184,0.8)'
+            ],
+            hoverBackgroundColor: ['#e63946', '#f4a261', '#94a3b8'],
+            borderRadius: 6,
+            borderSkipped: false,
           },
           {
             label: 'Concluídas',
             data: [pri.completed.critica, pri.completed.urgente, pri.completed.normal],
-            backgroundColor: ['rgba(34,197,94,0.5)', 'rgba(34,197,94,0.4)', 'rgba(34,197,94,0.3)'],
+            backgroundColor: [
+              'rgba(34,197,94,0.55)', 'rgba(34,197,94,0.4)', 'rgba(34,197,94,0.25)'
+            ],
+            hoverBackgroundColor: ['#22c55e', '#4ade80', '#86efac'],
+            borderRadius: 6,
+            borderSkipped: false,
           }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: true,
+        animation: ANIM,
         scales: {
-          x: { stacked: true, ticks: { color: colors.text }, grid: { color: colors.grid } },
-          y: { stacked: true, ticks: { color: colors.text }, grid: { color: colors.grid } }
+          x: {
+            stacked: true,
+            ticks: { color: colors.text, font: { size: 12 } },
+            grid: { color: colors.grid },
+            border: { color: colors.grid },
+          },
+          y: {
+            stacked: true,
+            ticks: { color: colors.text, font: { size: 12 }, stepSize: 1 },
+            grid: { color: colors.grid },
+            border: { color: colors.grid },
+          }
         },
-        plugins: { legend: { labels: { color: colors.text } } }
+        plugins: {
+          legend: { labels: { color: colors.text, usePointStyle: true, pointStyleWidth: 10 } },
+          tooltip: baseTooltip(),
+        }
       }
     });
   }
 
-  // ── Barras horizontais: por projeto ──
+  /* ── Barras horizontais: por projeto ── */
   destroyChart('project');
   var ctxPj = document.getElementById('chart-project');
   if (ctxPj && data.project_breakdown && data.project_breakdown.length > 0) {
-    var labels = data.project_breakdown.map(function(p) { return p.name; });
-    var activeVals = data.project_breakdown.map(function(p) { return p.active; });
+    var labels        = data.project_breakdown.map(function(p) { return p.name; });
+    var activeVals    = data.project_breakdown.map(function(p) { return p.active; });
     var completedVals = data.project_breakdown.map(function(p) { return p.completed; });
+    var barH = Math.max(200, data.project_breakdown.length * 44);
+    ctxPj.parentElement.style.maxHeight = barH + 'px';
+    ctxPj.style.height = barH + 'px';
+
     _perfCharts['project'] = new Chart(ctxPj, {
       type: 'bar',
       data: {
         labels: labels,
         datasets: [
-          { label: 'Ativas', data: activeVals, backgroundColor: 'rgba(230,57,70,0.7)' },
-          { label: 'Concluídas', data: completedVals, backgroundColor: 'rgba(34,197,94,0.5)' }
+          {
+            label: 'Ativas',
+            data: activeVals,
+            backgroundColor: 'rgba(230,57,70,0.75)',
+            hoverBackgroundColor: '#e63946',
+            borderRadius: 5,
+            borderSkipped: false,
+          },
+          {
+            label: 'Concluídas',
+            data: completedVals,
+            backgroundColor: 'rgba(34,197,94,0.55)',
+            hoverBackgroundColor: '#22c55e',
+            borderRadius: 5,
+            borderSkipped: false,
+          }
         ]
       },
       options: {
         indexAxis: 'y',
-        responsive: true, maintainAspectRatio: true,
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: ANIM,
         scales: {
-          x: { stacked: true, ticks: { color: colors.text }, grid: { color: colors.grid } },
-          y: { stacked: true, ticks: { color: colors.text }, grid: { color: colors.grid } }
+          x: {
+            stacked: true,
+            ticks: { color: colors.text, font: { size: 12 }, stepSize: 1 },
+            grid: { color: colors.grid },
+            border: { color: colors.grid },
+          },
+          y: {
+            stacked: true,
+            ticks: { color: colors.text, font: { size: 12 } },
+            grid: { display: false },
+            border: { color: 'transparent' },
+          }
         },
-        plugins: { legend: { labels: { color: colors.text } } }
+        plugins: {
+          legend: { labels: { color: colors.text, usePointStyle: true, pointStyleWidth: 10 } },
+          tooltip: baseTooltip(),
+        }
       }
     });
   }
