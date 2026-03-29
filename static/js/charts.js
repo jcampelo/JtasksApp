@@ -11,10 +11,10 @@ function isDark() {
 function chartColors() {
   var dark = isDark();
   return {
-    text:    dark ? '#94a3b8' : '#475569',
-    grid:    dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-    tooltip: dark ? '#1e293b' : '#ffffff',
-    border:  dark ? '#334155' : '#e2e8f0',
+    text:    dark ? '#94A3B8' : '#64748B',
+    grid:    dark ? 'rgba(255,255,255,0.05)' : 'rgba(13,31,53,0.06)',
+    tooltip: dark ? '#131D28' : '#FFFFFF',
+    border:  dark ? '#253448' : '#D8DCE4',
   };
 }
 
@@ -94,8 +94,8 @@ function renderCharts(data) {
         labels: ['Concluídas', 'Ativas'],
         datasets: [{
           data: [data.completed_count, data.active_count],
-          backgroundColor: ['#22c55e', '#e63946'],
-          hoverBackgroundColor: ['#16a34a', '#c1121f'],
+          backgroundColor: ['#0B8B78', '#C0392B'],
+          hoverBackgroundColor: ['#097366', '#A93226'],
           borderWidth: 0,
           hoverOffset: 6,
         }]
@@ -129,9 +129,9 @@ function renderCharts(data) {
             label: 'Ativas',
             data: [pri.active.critica, pri.active.urgente, pri.active.normal],
             backgroundColor: [
-              'rgba(230,57,70,0.8)', 'rgba(244,162,97,0.8)', 'rgba(148,163,184,0.8)'
+              'rgba(192,57,43,0.80)', 'rgba(196,125,26,0.75)', 'rgba(138,155,176,0.65)'
             ],
-            hoverBackgroundColor: ['#e63946', '#f4a261', '#94a3b8'],
+            hoverBackgroundColor: ['#C0392B', '#C47D1A', '#8A9BB0'],
             borderRadius: 6,
             borderSkipped: false,
           },
@@ -139,9 +139,9 @@ function renderCharts(data) {
             label: 'Concluídas',
             data: [pri.completed.critica, pri.completed.urgente, pri.completed.normal],
             backgroundColor: [
-              'rgba(34,197,94,0.55)', 'rgba(34,197,94,0.4)', 'rgba(34,197,94,0.25)'
+              'rgba(11,139,120,0.75)', 'rgba(11,139,120,0.52)', 'rgba(11,139,120,0.32)'
             ],
-            hoverBackgroundColor: ['#22c55e', '#4ade80', '#86efac'],
+            hoverBackgroundColor: ['#0B8B78', '#0D9E8A', '#10B09A'],
             borderRadius: 6,
             borderSkipped: false,
           }
@@ -191,16 +191,16 @@ function renderCharts(data) {
           {
             label: 'Ativas',
             data: activeVals,
-            backgroundColor: 'rgba(230,57,70,0.75)',
-            hoverBackgroundColor: '#e63946',
+            backgroundColor: 'rgba(192,57,43,0.75)',
+            hoverBackgroundColor: '#C0392B',
             borderRadius: 5,
             borderSkipped: false,
           },
           {
             label: 'Concluídas',
             data: completedVals,
-            backgroundColor: 'rgba(34,197,94,0.55)',
-            hoverBackgroundColor: '#22c55e',
+            backgroundColor: 'rgba(11,139,120,0.68)',
+            hoverBackgroundColor: '#0B8B78',
             borderRadius: 5,
             borderSkipped: false,
           }

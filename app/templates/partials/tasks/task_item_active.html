@@ -5,6 +5,14 @@
       {% if task.project %}
         <span class="task-project">{{ task.project }}</span>
       {% endif %}
+      {% if task.checklist_total > 0 %}
+        <span class="checklist-badge">
+          <span class="checklist-bar">
+            <span class="checklist-fill" style="width:{{ (task.checklist_done / task.checklist_total * 100)|int }}%"></span>
+          </span>
+          {{ task.checklist_done }}/{{ task.checklist_total }}
+        </span>
+      {% endif %}
       {% if task.days_badge %}
         {{ task.days_badge | safe }}
       {% endif %}
@@ -19,23 +27,33 @@
             hx-get="/tasks/{{ task.id }}/updates"
             hx-target="#modal-container"
             hx-swap="innerHTML"
+            hx-disabled-elt="this"
             title="Atualizações">
       💬
       {% if task.update_count > 0 %}
         <span class="update-count">{{ task.update_count }}</span>
       {% endif %}
     </button>
+    <!-- Duplicar -->
+    <button class="btn-duplicate"
+            hx-post="/tasks/{{ task.id }}/duplicate"
+            hx-target="#panel-ativas"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this"
+            title="Duplicar">📋</button>
     <!-- Editar -->
     <button class="btn-edit"
             hx-get="/tasks/{{ task.id }}/edit-form"
             hx-target="#modal-container"
             hx-swap="innerHTML"
+            hx-disabled-elt="this"
             title="Editar">✏️</button>
     <!-- Concluir -->
     <button class="btn-complete"
             hx-get="/tasks/{{ task.id }}/complete-form"
             hx-target="#modal-container"
             hx-swap="innerHTML"
+            hx-disabled-elt="this"
             title="Concluir">✓</button>
     <!-- Descartar -->
     <button class="btn-discard"
@@ -43,6 +61,7 @@
             hx-target="#task-{{ task.id }}"
             hx-swap="outerHTML"
             hx-confirm="Descartar esta tarefa?"
+            hx-disabled-elt="this"
             title="Descartar">🗑</button>
   </div>
 </div>

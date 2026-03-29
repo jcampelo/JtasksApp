@@ -1,0 +1,42 @@
+{% set sort_mode = sort | default("priority") %}
+
+{% if sort_mode == "priority" %}
+  {# ── Agrupado por prioridade ── #}
+  {% set priorities = [('critica', 'Critica'), ('urgente', 'Urgente'), ('normal', 'Normal')] %}
+  {% set has_any = namespace(value=false) %}
+
+  {% for pri_key, pri_label in priorities %}
+    {% set group = tasks | selectattr('priority', 'equalto', pri_key) | list %}
+    {% if group %}
+      {% set has_any.value = true %}
+      <div class="priority-group">
+        <div class="priority-header">
+          {% if pri_key == 'critica' %}<span class="pri-dot" style="background:#e63946;"></span>
+          {% elif pri_key == 'urgente' %}<span class="pri-dot" style="background:#f4a261;"></span>
+          {% else %}<span class="pri-dot" style="background:#94a3b8;"></span>{% endif %}
+          {{ pri_label }} ({{ group | length }})
+        </div>
+        {% for task in group %}
+          {% include "partials/tasks/task_item_active.html" %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if not has_any.value %}
+    {% include "partials/tasks/empty_state.html" %}
+  {% endif %}
+
+{% else %}
+  {# ── Lista flat (sem agrupamento) ── #}
+  {% if tasks %}
+    <div class="filter-results-info">
+      <span>{{ tasks | length }} tarefa{{ 's' if tasks | length != 1 else '' }}</span>
+    </div>
+    {% for task in tasks %}
+      {% include "partials/tasks/task_item_active.html" %}
+    {% endfor %}
+  {% else %}
+    {% include "partials/tasks/empty_state.html" %}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,56 @@
+<div class="calendar-container">
+  <div class="calendar-header">
+    <button class="calendar-nav"
+            hx-get="/tasks/calendar?month={{ current_offset - 1 }}"
+            hx-target="#panel-calendario"
+            hx-swap="innerHTML">
+      &#8592;
+    </button>
+    <h2 class="calendar-title">{{ month_name }} {{ target_year }}</h2>
+    <button class="calendar-nav"
+            hx-get="/tasks/calendar?month={{ current_offset + 1 }}"
+            hx-target="#panel-calendario"
+            hx-swap="innerHTML">
+      &#8594;
+    </button>
+  </div>
+
+  <div class="calendar-grid has-week-num">
+    <!-- Headers -->
+    <div class="calendar-dow week-num-header">Sem</div>
+    <div class="calendar-dow">Seg</div>
+    <div class="calendar-dow">Ter</div>
+    <div class="calendar-dow">Qua</div>
+    <div class="calendar-dow">Qui</div>
+    <div class="calendar-dow">Sex</div>
+    <div class="calendar-dow">Sab</div>
+    <div class="calendar-dow">Dom</div>
+
+    {% for week in weeks %}
+      <!-- Week number -->
+      <div class="calendar-week-num">{{ week[0].isocalendar()[1] }}</div>
+
+      {% for day in week %}
+        {% set day_str = day.isoformat() %}
+        {% set is_current_month = (day.month == target_month) %}
+        {% set is_today = (day == today) %}
+        {% set day_tasks = tasks_by_date.get(day_str, []) %}
+
+        <div class="calendar-cell {{ 'other-month' if not is_current_month else '' }} {{ 'today' if is_today else '' }}">
+          <div class="calendar-day-num">{{ day.day }}</div>
+          <div class="calendar-tasks">
+            {% for t in day_tasks %}
+              <div class="calendar-task {{ t.priority }}"
+                   hx-get="/tasks/{{ t.id }}/edit-form"
+                   hx-target="#modal-container"
+                   hx-swap="innerHTML"
+                   title="{{ t.name }}">
+                {{ t.name | truncate(18) }}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>

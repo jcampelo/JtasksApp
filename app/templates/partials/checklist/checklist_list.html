@@ -1,0 +1,24 @@
+<div id="checklist-{{ task_id }}" class="checklist-list">
+  {% if items %}
+    {% for item in items %}
+    <div class="checklist-item {% if item.done %}done{% endif %}">
+      <button class="checklist-toggle"
+              hx-post="/tasks/{{ task_id }}/checklist/{{ item.id }}/toggle"
+              hx-target="#checklist-{{ task_id }}"
+              hx-swap="outerHTML"
+              hx-disabled-elt="this">
+        {% if item.done %}&#9745;{% else %}&#9744;{% endif %}
+      </button>
+      <span class="checklist-text">{{ item.text }}</span>
+      <button class="btn-del-check"
+              hx-delete="/tasks/{{ task_id }}/checklist/{{ item.id }}"
+              hx-target="#checklist-{{ task_id }}"
+              hx-swap="outerHTML"
+              hx-disabled-elt="this"
+              title="Remover">&#10005;</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="checklist-empty">Nenhum item no checklist.</div>
+  {% endif %}
+</div>

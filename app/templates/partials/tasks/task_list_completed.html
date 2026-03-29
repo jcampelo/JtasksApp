@@ -24,7 +24,7 @@
               hx-post="/tasks/{{ task.id }}/reopen"
               hx-target="#completed-task-{{ task.id }}"
               hx-swap="outerHTML"
-              hx-confirm="Resgatar '{{ task.name }}' para ativas?">
+              hx-disabled-elt="this">
         ↩
       </button>
     </div>

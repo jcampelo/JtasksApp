@@ -6,7 +6,7 @@
   <title>{% block title %}Jtasks{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/app.css" />
   <script>
     (function() {
@@ -16,6 +16,9 @@
   </script>
 </head>
 <body>
+  <!-- Barra de progresso global -->
+  <div id="global-progress" class="global-progress"></div>
+
   {% block content %}{% endblock %}
 
   <!-- Alpine.js -->
@@ -26,6 +29,78 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
   {% block scripts %}{% endblock %}
+
+  <!-- Global loading bar -->
+  <script>
+    document.body.addEventListener("htmx:beforeRequest", function() {
+      document.getElementById("global-progress").classList.add("active");
+    });
+    document.body.addEventListener("htmx:afterRequest", function() {
+      document.getElementById("global-progress").classList.remove("active");
+    });
+    document.body.addEventListener("htmx:responseError", function() {
+      document.getElementById("global-progress").classList.remove("active");
+    });
+  </script>
+
+  <!-- Custom confirm modal -->
+  <div id="confirm-backdrop" class="modal-backdrop" onclick="if(event.target===this)_confirmCancel()">
+    <div class="modal confirm-modal">
+      <div class="confirm-modal-icon" id="confirm-icon"></div>
+      <h2 class="confirm-modal-title" id="confirm-title">Confirmar</h2>
+      <p class="confirm-modal-message" id="confirm-message"></p>
+      <div class="confirm-modal-actions">
+        <button class="confirm-btn-cancel" onclick="_confirmCancel()">Cancelar</button>
+        <button class="confirm-btn-ok" id="confirm-btn-ok" onclick="_confirmOk()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var _confirmCb = null;
+
+    document.addEventListener('htmx:confirm', function(e) {
+      if (!e.detail.question) return;
+      e.preventDefault();
+      var q = e.detail.question;
+      var issue = e.detail.issueRequest;
+      var destructive = /descartar|remover|excluir|deletar/i.test(q);
+
+      document.getElementById('confirm-message').textContent = q;
+      document.getElementById('confirm-title').textContent = destructive ? 'Atenção' : 'Confirmar';
+
+      var icon = document.getElementById('confirm-icon');
+      if (destructive) {
+        icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        icon.className = 'confirm-modal-icon confirm-icon-danger';
+      } else {
+        icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+        icon.className = 'confirm-modal-icon confirm-icon-accent';
+      }
+
+      var okBtn = document.getElementById('confirm-btn-ok');
+      okBtn.className = destructive ? 'confirm-btn-ok confirm-btn-danger' : 'confirm-btn-ok confirm-btn-accent';
+
+      _confirmCb = function() { issue(true); };
+      document.getElementById('confirm-backdrop').classList.add('show');
+    });
+
+    function _confirmOk() {
+      document.getElementById('confirm-backdrop').classList.remove('show');
+      if (_confirmCb) { _confirmCb(); _confirmCb = null; }
+    }
+    function _confirmCancel() {
+      document.getElementById('confirm-backdrop').classList.remove('show');
+      _confirmCb = null;
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') _confirmCancel();
+      if (e.key === 'Enter') {
+        var b = document.getElementById('confirm-backdrop');
+        if (b && b.classList.contains('show')) _confirmOk();
+      }
+    });
+  </script>
 
   <!-- Toast global listener -->
   <script>
