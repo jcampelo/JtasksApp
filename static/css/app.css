@@ -666,22 +666,6 @@ input[type="submit"]:disabled {
 .task-item.urgente { border-left-color: #C47A3A; }
 .task-item.normal  { border-left-color: #C5BEAF; }
 
-.task-item.task-overdue {
-  transition: none;
-  animation: pulse-opacity-fast 1.3s ease-in-out infinite;
-}
-.task-item.task-soon {
-  transition: none;
-  animation: pulse-opacity-slow 2.2s ease-in-out infinite;
-}
-@keyframes pulse-opacity-fast {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
-}
-@keyframes pulse-opacity-slow {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.6; }
-}
 
 .task-info { flex: 1; min-width: 0; }
 .task-name {
@@ -1039,9 +1023,9 @@ input[type="submit"]:disabled {
   display: inline-block; border-radius: 4px; padding: 1px 7px;
   font-size: 0.7rem; font-weight: 600;
 }
-.days-badge.overdue  { background: var(--danger-light); color: var(--danger); animation: pulse-overdue 1.5s ease-in-out infinite; }
-.days-badge.today    { background: rgba(196,122,58,0.1); color: #B05A10; }
-.days-badge.soon     { background: rgba(163,92,26,0.1); color: #A35C1A; }
+.days-badge.overdue  { background: var(--danger-light); color: var(--danger); animation: pulse-badge-overdue 1.2s ease-in-out infinite; }
+.days-badge.today    { background: rgba(196,122,58,0.1); color: #B05A10; animation: pulse-badge-soon 2s ease-in-out infinite; }
+.days-badge.soon     { background: rgba(163,92,26,0.1); color: #A35C1A; animation: pulse-badge-soon 2.5s ease-in-out infinite; }
 .days-badge.ok       { background: rgba(45,106,79,0.1); color: var(--success); }
 .days-badge.neutral  { background: var(--bg-surface2); color: var(--text-muted); }
 [data-theme="dark"] .days-badge.overdue  { background: rgba(184,50,50,0.14);  color: #E07070; }
@@ -1049,7 +1033,11 @@ input[type="submit"]:disabled {
 [data-theme="dark"] .days-badge.soon     { background: rgba(163,92,26,0.14);  color: #D4843A; }
 [data-theme="dark"] .days-badge.ok       { background: rgba(45,106,79,0.14);  color: #5EB88A; }
 [data-theme="dark"] .days-badge.neutral  { background: rgba(107,102,94,0.18); color: var(--text-muted); }
-@keyframes pulse-overdue {
+@keyframes pulse-badge-overdue {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.96); }
+}
+@keyframes pulse-badge-soon {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.55; }
 }
