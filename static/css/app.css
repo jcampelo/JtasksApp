@@ -861,12 +861,6 @@ input[type="submit"]:disabled {
 }
 .bulk-btn-clear:hover { color: #F0ECE4; }
 .bulk-loading { opacity: 0.65; pointer-events: none; }
-@media (max-width: 768px) {
-  .bulk-bar {
-    bottom: 68px; left: 8px; right: 8px; transform: none;
-    flex-wrap: wrap; justify-content: center; gap: 8px;
-  }
-}
 
 /* ══ CALENDAR VIEW ══ */
 .calendar-container { max-width: 100%; padding: 4px 0; }
@@ -971,14 +965,6 @@ input[type="submit"]:disabled {
 }
 [data-theme="dark"] .calendar-task.urgente {
   background: rgba(163,92,26,0.15); color: #E0943E;
-}
-@media (max-width: 768px) {
-  .calendar-cell { min-height: 58px; padding: 3px; }
-  .calendar-task { font-size: 0.58rem; padding: 1px 3px; }
-  .calendar-dow { font-size: 0.62rem; padding: 5px 2px; }
-  .calendar-tasks { max-height: 44px; }
-  .calendar-grid.has-week-num { grid-template-columns: 26px repeat(7, 1fr); }
-  .calendar-week-num { font-size: 0.58rem; }
 }
 
 /* ══ COMPLETED TAB ══ */
@@ -1384,8 +1370,13 @@ input[type="submit"]:disabled {
 .htmx-request .htmx-indicator { opacity: 1; }
 .htmx-request.htmx-indicator { opacity: 1; }
 
+/* ══ MOBILE: TOGGLE BUTTON (hidden on desktop) ══ */
+.mobile-add-toggle { display: none; }
+
 /* ══ RESPONSIVE: MOBILE ══ */
 @media (max-width: 768px) {
+
+  /* ── Sidebar → bottom tab bar ── */
   .sidebar {
     position: fixed;
     top: auto; left: 0; right: 0; bottom: 0;
@@ -1394,17 +1385,12 @@ input[type="submit"]:disabled {
     flex-direction: row;
     overflow: hidden;
     box-shadow: 0 -1px 0 var(--border);
+    border-right: none;
   }
   .sidebar:hover { width: 100% !important; }
-
   .sidebar-logo,
+  .sidebar-logo-version,
   .nav-item-label { display: none !important; }
-
-  .topbar {
-    left: 0;
-    top: 0;
-  }
-
   .sidebar-nav {
     display: flex;
     flex-direction: row;
@@ -1414,7 +1400,6 @@ input[type="submit"]:disabled {
     padding: 0;
     overflow-x: auto;
   }
-
   .nav-item {
     flex-direction: column;
     padding: 8px 4px;
@@ -1431,38 +1416,161 @@ input[type="submit"]:disabled {
   }
   .nav-item-icon { font-size: 1.2rem; }
 
+  /* ── Topbar ── */
+  .topbar {
+    left: 0;
+    top: 0;
+    padding: 0 14px;
+    height: 46px;
+  }
+  .topbar-left {
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55%;
+  }
+  .topbar-user span,
+  .topbar-user svg { display: none; }
+  .topbar-user::after {
+    content: attr(data-email-short);
+    font-size: 0;
+  }
+  /* Hide email text on mobile, keep buttons */
+  .topbar-right { gap: 6px; }
+  .topbar-user { display: none; }
+  .topbar-btn { padding: 5px 7px; }
+
+  /* ── App wrapper ── */
   .app-wrapper {
     margin-left: 0;
-    padding-top: 50px;
+    padding-top: 46px;
     margin-bottom: 56px;
   }
+  main { padding: 12px 10px; }
 
-  main { padding: 16px 14px; }
-
-  .add-form .form-row { grid-template-columns: 1fr 1fr; }
-  .add-form .form-row .field-priority { grid-column: 1 / -1; }
-  .btn-add { grid-column: 1 / -1; width: 100%; }
-
-  .filter-toolbar { gap: 6px; }
-  .filter-search { min-width: 100%; }
-  .filter-pills { flex-wrap: wrap; width: 100%; }
-  .filter-select { flex: 1; max-width: none; }
-
-  .task-item { flex-wrap: wrap; }
-  .task-actions {
-    width: 100%; justify-content: flex-end;
-    margin-top: 8px; padding-top: 8px;
-    border-top: 1px solid var(--border-light);
+  /* ── Add form: collapsible ── */
+  .mobile-add-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .mobile-add-toggle:hover { background: var(--accent-hover); }
+  .mobile-add-toggle.active { background: var(--primary); }
+  .mobile-add-toggle-icon {
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: transform 0.2s;
+  }
+  .mobile-add-toggle.active .mobile-add-toggle-icon {
+    transform: rotate(45deg);
   }
 
-  .perf-kpis { grid-template-columns: 1fr 1fr; }
-  .perf-grid { grid-template-columns: 1fr; }
+  .add-form {
+    display: none;
+    margin-bottom: 10px;
+  }
+  .add-form.mobile-open {
+    display: grid;
+  }
+
+  .add-form .form-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .add-form textarea { min-height: 52px; }
+  .btn-add { width: 100%; }
+
+  /* ── Filter bar ── */
+  .filter-toolbar {
+    gap: 6px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .filter-search { min-width: 100%; }
+  .filter-pills {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .filter-pill { flex-shrink: 0; padding: 5px 10px; }
+  .filter-select { flex: 1; min-width: 0; max-width: none; font-size: 0.78rem; }
+  .filter-pill-overdue { flex-shrink: 0; }
+
+  /* ── Task items ── */
+  .task-item {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .task-name { font-size: 0.84rem; }
+  .task-meta { font-size: 0.7rem; gap: 4px; }
+  .task-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-light);
+    gap: 5px;
+  }
+  .btn-updates, .btn-edit, .btn-complete, .btn-discard, .btn-duplicate {
+    width: 34px; height: 34px;
+  }
+  .priority-group { margin-bottom: 14px; }
+
+  /* ── Performance ── */
+  .perf-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .perf-kpi { padding: 12px 14px; gap: 10px; }
+  .perf-kpi-value { font-size: 1.3rem; }
+  .perf-grid { grid-template-columns: 1fr; gap: 10px; }
   .perf-grid-full { grid-column: 1; }
+  .perf-card { padding: 16px; }
 
+  /* ── Modal ── */
   .modal { margin: 8px; padding: 18px; max-height: 95vh; }
+  .modal-backdrop { align-items: flex-end; }
 
+  /* ── Completed ── */
   .completed-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .completed-header .btn-export { width: 100%; text-align: center; }
 
+  /* ── Notify ── */
   .notify-grid { grid-template-columns: 1fr; }
+  .notify-status-card { flex-direction: column; gap: 10px; text-align: center; }
+  .btn-send-now { width: 100%; }
+
+  /* ── Bulk actions ── */
+  .bulk-bar {
+    bottom: 64px; left: 8px; right: 8px; transform: none;
+    flex-wrap: wrap; justify-content: center; gap: 8px;
+    padding: 10px 14px;
+  }
+
+  /* ── Calendar ── */
+  .calendar-cell { min-height: 52px; padding: 3px; }
+  .calendar-task { font-size: 0.56rem; padding: 1px 3px; }
+  .calendar-dow { font-size: 0.6rem; padding: 5px 2px; }
+  .calendar-tasks { max-height: 40px; }
+  .calendar-grid.has-week-num { grid-template-columns: 24px repeat(7, 1fr); }
+  .calendar-week-num { font-size: 0.56rem; }
+
+  /* ── Toast ── */
+  #toast { bottom: 68px; font-size: 0.8rem; padding: 8px 16px; }
 }
