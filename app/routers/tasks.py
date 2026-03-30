@@ -536,7 +536,7 @@ async def get_updates(task_id: str, request: Request, user=Depends(get_current_u
         u["created_fmt"] = _fmt_datetime(u.get("created_at"))
     return templates.TemplateResponse(
         "partials/modals/updates_modal.html",
-        {"request": request, "task": task, "updates": updates},
+        {"request": request, "task": task, "updates": updates, "task_id": task_id},
     )
 
 
