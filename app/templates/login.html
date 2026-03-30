@@ -14,6 +14,9 @@
     <form hx-post="/auth/login"
           hx-target="#login-form-inner"
           hx-swap="outerHTML"
+          hx-disabled-elt="find .login-btn"
+          hx-on::before-request="this.querySelector('.login-btn').textContent='Entrando...'"
+          hx-on::after-request="this.querySelector('.login-btn').textContent='Entrar'"
           id="login-form-inner">
       <div class="login-field">
         <label for="login-email">Email</label>

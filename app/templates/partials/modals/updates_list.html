@@ -10,6 +10,7 @@
               hx-delete="/tasks/{{ task_id }}/updates/{{ u.id }}"
               hx-target="#updates-list"
               hx-swap="outerHTML"
+              hx-disabled-elt="this"
               title="Remover nota">🗑</button>
     </div>
     {% endfor %}

@@ -7,7 +7,9 @@
   <form hx-post="/projects"
         hx-target="#projects-list"
         hx-swap="outerHTML"
-        hx-on::after-request="this.reset()">
+        hx-disabled-elt="find .btn-add"
+        hx-on::before-request="this.querySelector('.btn-add').textContent='Adicionando...'"
+        hx-on::after-request="this.querySelector('.btn-add').textContent='+ Adicionar'; this.reset()">
     <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
       <div class="field" style="flex:1;">
         <label>Nome do projeto</label>
@@ -30,7 +32,8 @@
               hx-delete="/projects/{{ proj.id }}"
               hx-target="#project-{{ proj.id }}"
               hx-swap="outerHTML"
-              hx-confirm="Remover projeto '{{ proj.name }}'?">
+              hx-confirm="Remover projeto '{{ proj.name }}'?"
+              hx-disabled-elt="this">
         Remover
       </button>
     </div>

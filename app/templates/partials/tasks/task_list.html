@@ -42,33 +42,108 @@
   </form>
 </div>
 
-<!-- Lista de tarefas -->
-<div id="task-list-body">
-  {% set priorities = [('critica', '🔴 Crítica'), ('urgente', '🟡 Urgente'), ('normal', '⚪ Normal')] %}
-  {% set has_any = namespace(value=false) %}
+<!-- Barra de filtros -->
+<div class="filter-toolbar" x-data="filterBar()" :class="{ 'filter-loading': loading }">
+  <!-- Busca -->
+  <div class="filter-search">
+    <svg class="filter-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Buscar tarefa..."
+           x-model="search"
+           :disabled="loading"
+           @input.debounce.300ms="applyFilters()" />
+  </div>
 
-  {% for pri_key, pri_label in priorities %}
-    {% set group = tasks | selectattr('priority', 'equalto', pri_key) | list %}
-    {% if group %}
-      {% set has_any.value = true %}
-      <div class="priority-group">
-        <div class="priority-header">{{ pri_label }} ({{ group | length }})</div>
-        {% for task in group %}
-          {% include "partials/tasks/task_item_active.html" %}
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endfor %}
+  <!-- Projeto -->
+  <select class="filter-select" x-model="project" :disabled="loading" @change="applyFilters()">
+    <option value="">Todos os projetos</option>
+    {% for proj in projects %}
+    <option value="{{ proj.name }}">{{ proj.name }}</option>
+    {% endfor %}
+  </select>
 
-  {% if not has_any.value %}
-    {% include "partials/tasks/empty_state.html" %}
-  {% endif %}
+  <!-- Pills de prioridade -->
+  <div class="filter-pills">
+    <button class="filter-pill" :class="{ active: priority === '' }" :disabled="loading" @click="setPriority('')">Todas</button>
+    <button class="filter-pill" :class="{ active: priority === 'critica' }" :disabled="loading" @click="setPriority('critica')">Critica</button>
+    <button class="filter-pill" :class="{ active: priority === 'urgente' }" :disabled="loading" @click="setPriority('urgente')">Urgente</button>
+    <button class="filter-pill" :class="{ active: priority === 'normal' }" :disabled="loading" @click="setPriority('normal')">Normal</button>
+  </div>
+
+  <!-- Toggle Atrasadas -->
+  <button class="filter-pill filter-pill-overdue" :class="{ active: overdue }" :disabled="loading" @click="toggleOverdue()">Atrasadas</button>
+
+  <!-- Ordenar -->
+  <select class="filter-select" x-model="sort" :disabled="loading" @change="applyFilters()">
+    <option value="priority">Prioridade</option>
+    <option value="deadline_asc">Prazo</option>
+    <option value="created_desc">Mais recentes</option>
+    <option value="created_asc">Mais antigas</option>
+  </select>
+
+  <!-- Spinner de loading -->
+  <span class="filter-spinner" x-show="loading"></span>
+
+  <!-- Limpar filtros -->
+  <button class="filter-clear" x-show="hasFilters() && !loading" @click="clearFilters()">Limpar</button>
 </div>
 
-<!-- Seletor de projetos OOB sync -->
-<select id="task-project-select" hx-swap-oob="true">
-  <option value="">— Selecione —</option>
-  {% for proj in projects %}
-  <option value="{{ proj.name }}">{{ proj.name }}</option>
-  {% endfor %}
-</select>
+<!-- Lista de tarefas -->
+<div id="task-list-body">
+  {% set sort = "priority" %}
+  {% include "partials/tasks/task_list_body.html" %}
+</div>
+
+<script>
+function filterBar() {
+  return {
+    search: '',
+    project: '',
+    priority: '',
+    sort: 'priority',
+    overdue: false,
+    loading: false,
+
+    applyFilters() {
+      var self = this;
+      self.loading = true;
+      var params = new URLSearchParams();
+      if (this.search)   params.set('search', this.search);
+      if (this.project)  params.set('project', this.project);
+      if (this.priority) params.set('priority', this.priority);
+      if (this.sort !== 'priority') params.set('sort', this.sort);
+      if (this.overdue)  params.set('overdue', 'true');
+      htmx.ajax('GET', '/tasks/filter?' + params.toString(), {
+        target: '#task-list-body',
+        swap: 'innerHTML'
+      }).then(function() {
+        self.loading = false;
+      }).catch(function() {
+        self.loading = false;
+      });
+    },
+
+    setPriority(val) {
+      this.priority = val;
+      this.applyFilters();
+    },
+
+    toggleOverdue() {
+      this.overdue = !this.overdue;
+      this.applyFilters();
+    },
+
+    hasFilters() {
+      return this.search || this.project || this.priority || this.sort !== 'priority' || this.overdue;
+    },
+
+    clearFilters() {
+      this.search = '';
+      this.project = '';
+      this.priority = '';
+      this.sort = 'priority';
+      this.overdue = false;
+      this.applyFilters();
+    }
+  };
+}
+</script>

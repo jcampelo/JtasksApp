@@ -19,7 +19,8 @@
           <button class="btn-remove"
                   hx-delete="/presets/{{ p.id }}"
                   hx-target="#preset-{{ p.id }}"
-                  hx-swap="outerHTML">Remover</button>
+                  hx-swap="outerHTML"
+                  hx-disabled-elt="this">Remover</button>
         </div>
         {% endfor %}
       {% else %}
@@ -31,7 +32,9 @@
             hx-post="/presets/apply"
             hx-target="#panel-ativas"
             hx-swap="innerHTML"
-            hx-on::after-request="document.getElementById('modal-container').innerHTML=''">
+            hx-disabled-elt="this"
+            hx-on::before-request="this.textContent='Aplicando...'"
+            hx-on::after-request="this.textContent='Aplicar todos hoje'; document.getElementById('modal-container').innerHTML=''">
       ▶ Aplicar todos hoje
     </button>
 
@@ -41,7 +44,9 @@
           hx-post="/presets"
           hx-target="#presets-list"
           hx-swap="outerHTML"
-          hx-on::after-request="if(event.detail.successful)this.reset()">
+          hx-disabled-elt="find .btn-add-preset"
+          hx-on::before-request="this.querySelector('.btn-add-preset').textContent='Adicionando...'"
+          hx-on::after-request="this.querySelector('.btn-add-preset').textContent='+ Adicionar preset'; if(event.detail.successful) this.reset()">
       <div class="field">
         <label>Nome</label>
         <input name="name" type="text" maxlength="120" required placeholder="Ex: Daily standup" />

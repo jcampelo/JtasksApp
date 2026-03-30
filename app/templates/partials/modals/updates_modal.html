@@ -15,7 +15,9 @@
           hx-post="/tasks/{{ task.id }}/updates"
           hx-target="#updates-list"
           hx-swap="outerHTML"
-          hx-on::after-request="if(event.detail.successful)this.reset()">
+          hx-disabled-elt="find .btn-add-preset"
+          hx-on::before-request="this.querySelector('.btn-add-preset').textContent='Adicionando...'"
+          hx-on::after-request="this.querySelector('.btn-add-preset').textContent='Adicionar nota'; if(event.detail.successful) this.reset()">
       <div class="field">
         <textarea name="text" placeholder="Digite sua nota..." maxlength="300" required
                   onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();this.closest('form').requestSubmit();}"></textarea>

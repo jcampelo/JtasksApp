@@ -11,7 +11,10 @@
   <button class="btn-send-now"
           hx-post="/notify/send"
           hx-target="#notify-status-msg"
-          hx-swap="innerHTML">
+          hx-swap="innerHTML"
+          hx-disabled-elt="this"
+          hx-on::before-request="this.textContent='Enviando...'"
+          hx-on::after-request="this.textContent='Enviar agora'">
     Enviar agora
   </button>
 </div>
@@ -21,7 +24,10 @@
   <h3>Configuração SMTP</h3>
   <form hx-post="/notify/config"
         hx-target="#notify-status-msg"
-        hx-swap="innerHTML">
+        hx-swap="innerHTML"
+        hx-disabled-elt="find .btn-save-config"
+        hx-on::before-request="this.querySelector('.btn-save-config').textContent='Salvando...'"
+        hx-on::after-request="this.querySelector('.btn-save-config').textContent='Salvar configuracao'">
     <div class="notify-grid">
       <div class="notify-field">
         <label>Destinatário</label>

@@ -8,7 +8,10 @@
     <form class="modal-form"
           hx-post="/tasks/{{ task.id }}/edit"
           hx-target="#modal-container"
-          hx-swap="innerHTML">
+          hx-swap="innerHTML"
+          hx-disabled-elt="find .modal-confirm-btn"
+          hx-on::before-request="this.querySelector('.modal-confirm-btn').textContent='Salvando...'"
+          hx-on::after-request="this.querySelector('.modal-confirm-btn').textContent='Salvar alteracoes'">
       <div class="field">
         <label>Atividade</label>
         <textarea name="name" maxlength="120" required>{{ task.name }}</textarea>
@@ -37,6 +40,22 @@
       {% if error %}<div class="modal-err">{{ error }}</div>{% endif %}
       <button type="submit" class="modal-confirm-btn">Salvar alterações</button>
     </form>
+
+    <!-- Checklist -->
+    <div class="modal-checklist-section">
+      <h3 class="checklist-title">Checklist</h3>
+      {% set task_id = task.id %}
+      {% include "partials/checklist/checklist_list.html" with context %}
+      <form class="checklist-add-form"
+            hx-post="/tasks/{{ task.id }}/checklist"
+            hx-target="#checklist-{{ task.id }}"
+            hx-swap="outerHTML"
+            hx-disabled-elt="find button"
+            hx-on::after-request="if(event.detail.successful) this.reset()">
+        <input type="text" name="text" placeholder="Novo item..." maxlength="120" required class="checklist-input" />
+        <button type="submit" class="checklist-add-btn">+</button>
+      </form>
+    </div>
   </div>
 </div>
 <script>

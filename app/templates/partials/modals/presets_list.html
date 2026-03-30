@@ -11,7 +11,8 @@
       <button class="btn-remove"
               hx-delete="/presets/{{ p.id }}"
               hx-target="#preset-{{ p.id }}"
-              hx-swap="outerHTML">Remover</button>
+              hx-swap="outerHTML"
+              hx-disabled-elt="this">Remover</button>
     </div>
     {% endfor %}
   {% else %}

@@ -8,7 +8,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def root(request: Request):
     if request.session.get("user"):
         return RedirectResponse(url="/app", status_code=302)

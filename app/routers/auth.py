@@ -9,7 +9,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/auth/login", response_class=HTMLResponse)
+@router.api_route("/auth/login", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def login_page(request: Request):
     if request.session.get("user"):
         return RedirectResponse(url="/app", status_code=302)

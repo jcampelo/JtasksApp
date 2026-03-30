@@ -8,7 +8,10 @@
     <p class="modal-task-subtitle">{{ task.name }}</p>
     <form hx-post="/tasks/{{ task.id }}/complete"
           hx-target="#modal-container"
-          hx-swap="innerHTML">
+          hx-swap="innerHTML"
+          hx-disabled-elt="find .modal-confirm-btn"
+          hx-on::before-request="this.querySelector('.modal-confirm-btn').textContent='Concluindo...'"
+          hx-on::after-request="this.querySelector('.modal-confirm-btn').textContent='Confirmar conclusao'">
       <label class="modal-field-label">Data de conclusão</label>
       <input class="modal-date-input" type="date" name="completed_date"
              value="{{ today }}" max="{{ today }}" required />
