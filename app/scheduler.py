@@ -20,7 +20,7 @@ def _run_email_job():
         print(f"[scheduler] Erro ao enviar: {e}")
 
 
-def _reschedule():
+def reschedule():
     cfg = load_config()
     if not cfg.get("enabled"):
         if _scheduler.get_job(_current_job_id):
@@ -42,7 +42,7 @@ def _reschedule():
 
 def start_scheduler():
     _scheduler.start()
-    _reschedule()
+    reschedule()
     print("[scheduler] APScheduler iniciado")
 
 

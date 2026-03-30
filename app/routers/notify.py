@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from app.deps import get_current_user
 from app.services.notify_config import load_config, save_config
 from app.services.email_service import build_email_html, send_email
+from app.scheduler import reschedule
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -50,6 +51,7 @@ async def save_notify_config(
     }
     try:
         save_config(new_cfg)
+        reschedule()
         return HTMLResponse('<span style="color:#22c55e;font-weight:600;">✅ Configuração salva!</span>')
     except Exception as e:
         return HTMLResponse(f'<span style="color:#e63946;">Erro: {e}</span>')
