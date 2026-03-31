@@ -16,10 +16,13 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
           script: |
+            set -e
             git config --global --add safe.directory /home/jtasks/JtasksApp
             cd /home/jtasks/JtasksApp
-            git pull origin master
+            git fetch origin master
+            git reset --hard origin/master
             source venv/bin/activate
             pip install -r requirements.txt --quiet
             sudo systemctl restart jtasks
