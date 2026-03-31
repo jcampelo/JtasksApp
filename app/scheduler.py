@@ -13,7 +13,7 @@ def _run_email_job():
     if not (cfg.get("enabled") and cfg.get("smtp_user") and cfg.get("email_to") and cfg.get("smtp_password")):
         return
     try:
-        html, subject = build_email_html()
+        html, subject = build_email_html(user_id=cfg.get("user_id", ""))
         send_email(cfg, html, subject)
         print(f"[scheduler] Email enviado: {subject}")
     except Exception as e:

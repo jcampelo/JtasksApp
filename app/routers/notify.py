@@ -48,6 +48,7 @@ async def save_notify_config(
         "smtp_password": smtp_password if smtp_password else existing.get("smtp_password", ""),
         "schedule_time": schedule_time,
         "enabled": enabled == "1",
+        "user_id": user["user_id"],
     }
     try:
         save_config(new_cfg)
@@ -67,7 +68,7 @@ async def send_now(request: Request, user=Depends(get_current_user)):
     if not cfg.get("smtp_password"):
         return HTMLResponse('<span style="color:#e63946;">⚠ Senha SMTP não configurada.</span>')
     try:
-        html, subject = build_email_html()
+        html, subject = build_email_html(user_id=user["user_id"])
         send_email(cfg, html, subject)
         return HTMLResponse(f'<span style="color:#22c55e;font-weight:600;">✅ Email enviado: {subject}</span>')
     except Exception as e:

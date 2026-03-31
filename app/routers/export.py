@@ -83,6 +83,7 @@ async def export_active(request: Request, user=Depends(get_current_user)):
     tasks = (
         client.table("tasks")
         .select("*, task_updates(*)")
+        .eq("user_id", user["user_id"])
         .eq("status", "active")
         .order("created_at")
         .execute()
@@ -103,6 +104,7 @@ async def export_completed(request: Request, user=Depends(get_current_user)):
     tasks = (
         client.table("tasks")
         .select("*, task_updates(*)")
+        .eq("user_id", user["user_id"])
         .eq("status", "completed")
         .order("completed_at", desc=True)
         .execute()

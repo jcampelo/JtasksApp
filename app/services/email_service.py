@@ -20,7 +20,7 @@ def _supabase_get(path: str):
         return json.loads(r.read().decode())
 
 
-def build_email_html() -> tuple[str, str]:
+def build_email_html(user_id: str = "") -> tuple[str, str]:
     today_iso = date.today().isoformat()
     today_dt  = date.today()
 
@@ -31,9 +31,11 @@ def build_email_html() -> tuple[str, str]:
     dia_semana = DIAS[today_dt.weekday()]
     data_fmt   = f"{dia_semana}, {today_dt.day} de {MESES[today_dt.month-1]} de {today_dt.year}"
 
+    uid_filter = f"&user_id=eq.{user_id}" if user_id else ""
+
     try:
         active = _supabase_get(
-            "/rest/v1/tasks?status=eq.active&select=*,task_updates(*)&order=deadline.asc.nullslast"
+            f"/rest/v1/tasks?status=eq.active{uid_filter}&select=*,task_updates(*)&order=deadline.asc.nullslast"
         )
     except Exception as e:
         print(f"[email] Erro ao buscar ativas: {e}")
@@ -41,7 +43,7 @@ def build_email_html() -> tuple[str, str]:
 
     try:
         completed = _supabase_get(
-            f"/rest/v1/tasks?status=eq.completed&completed_at=gte.{today_iso}T00:00:00&select=*"
+            f"/rest/v1/tasks?status=eq.completed&completed_at=gte.{today_iso}T00:00:00{uid_filter}&select=*"
         )
     except Exception as e:
         print(f"[email] Erro ao buscar concluídas: {e}")
@@ -49,7 +51,7 @@ def build_email_html() -> tuple[str, str]:
 
     try:
         discarded = _supabase_get(
-            f"/rest/v1/tasks?status=eq.discarded&select=*&updated_at=gte.{today_iso}T00:00:00"
+            f"/rest/v1/tasks?status=eq.discarded{uid_filter}&select=*&updated_at=gte.{today_iso}T00:00:00"
         )
     except Exception as e:
         print(f"[email] Erro ao buscar descartadas: {e}")

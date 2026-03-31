@@ -16,10 +16,12 @@ async def performance_data(request: Request, user=Depends(get_current_user)):
 
     active = (
         client.table("tasks").select("priority, project")
+        .eq("user_id", user["user_id"])
         .eq("status", "active").execute().data or []
     )
     completed = (
         client.table("tasks").select("priority, project")
+        .eq("user_id", user["user_id"])
         .eq("status", "completed").execute().data or []
     )
 
