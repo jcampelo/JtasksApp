@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -8,12 +10,18 @@ from app.config import settings
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+try:
+    _css_path = os.path.join(os.path.dirname(__file__), "..", "..", "static", "css", "app.css")
+    _CSS_V = str(int(os.path.getmtime(_css_path)))
+except OSError:
+    _CSS_V = "1"
+
 
 @router.api_route("/auth/login", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def login_page(request: Request):
     if request.session.get("user"):
         return RedirectResponse(url="/app", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse("login.html", {"request": request, "error": None, "css_version": _CSS_V})
 
 
 @router.post("/auth/login", response_class=HTMLResponse)
@@ -47,7 +55,7 @@ async def login_submit(
             error_msg = "Email ou senha incorretos."
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": error_msg},
+            {"request": request, "error": error_msg, "css_version": _CSS_V},
             status_code=401,
         )
 

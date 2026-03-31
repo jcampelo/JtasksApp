@@ -1374,7 +1374,7 @@ input[type="submit"]:disabled {
 .mobile-add-toggle { display: none; }
 
 /* ══ RESPONSIVE: MOBILE ══ */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
 
   /* ── Sidebar → bottom tab bar ── */
   .sidebar {

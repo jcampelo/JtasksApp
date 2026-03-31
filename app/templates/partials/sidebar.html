@@ -139,7 +139,7 @@ function updateThemeIcon() {
   }
   var el = document.getElementById('topbar-date');
   if (el) {
-    var isMobile = window.innerWidth <= 768;
+    var isMobile = window.innerWidth <= 1024;
     if (isMobile) {
       el.textContent = DIAS_ABR[d.getDay()] + ', ' + d.getDate() + ' ' + MESES_ABR[d.getMonth()] + ' ' + d.getFullYear() + ' | Sem ' + getWeekNumber(d);
     } else {
