@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def notify_config_page(request: Request, user=Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
-    cfg = load_config()
+    cfg = load_config(user["user_id"])
     safe = {k: v for k, v in cfg.items() if k != "smtp_password"}
     safe["has_password"] = bool(cfg.get("smtp_password"))
     return templates.TemplateResponse(
@@ -39,7 +39,7 @@ async def save_notify_config(
     if isinstance(user, RedirectResponse):
         return user
 
-    existing = load_config()
+    existing = load_config(user["user_id"])
     new_cfg = {
         "email_to": email_to,
         "smtp_host": smtp_host,
@@ -51,7 +51,7 @@ async def save_notify_config(
         "user_id": user["user_id"],
     }
     try:
-        save_config(new_cfg)
+        save_config(new_cfg, user["user_id"])
         reschedule()
         return HTMLResponse('<span style="color:#22c55e;font-weight:600;">✅ Configuração salva!</span>')
     except Exception as e:
@@ -62,7 +62,7 @@ async def save_notify_config(
 async def send_now(request: Request, user=Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
-    cfg = load_config()
+    cfg = load_config(user["user_id"])
     if not cfg.get("email_to") or not cfg.get("smtp_user") or not cfg.get("smtp_host"):
         return HTMLResponse('<span style="color:#e63946;">⚠ Configure o SMTP antes de enviar.</span>')
     if not cfg.get("smtp_password"):

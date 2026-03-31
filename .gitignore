@@ -1,6 +1,8 @@
 data.json
 .env
 config.json
+config.json.migrated
+configs/
 __pycache__/
 *.pyc
 *.pyo
