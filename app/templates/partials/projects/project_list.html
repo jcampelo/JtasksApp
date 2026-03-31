@@ -2,8 +2,13 @@
   <h2>Projetos ({{ projects | length }})</h2>
 </div>
 
+<button class="mobile-add-toggle" onclick="document.querySelector('#projects-add-form').classList.toggle('mobile-open'); this.classList.toggle('active')">
+  <span class="mobile-add-toggle-icon">+</span>
+  <span class="mobile-add-toggle-label">Novo projeto</span>
+</button>
+
 <!-- Formulário adicionar projeto -->
-<div class="add-form" style="margin-bottom:20px;">
+<div class="add-form" id="projects-add-form" style="margin-bottom:20px;">
   <form hx-post="/projects"
         hx-target="#projects-list"
         hx-swap="outerHTML"
