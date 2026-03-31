@@ -11,7 +11,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 def _get_projects(user):
     client = get_user_client(user["access_token"], user["refresh_token"])
-    result = client.table("projects").select("*").order("name").execute()
+    result = client.table("projects").select("*").eq("user_id", user["user_id"]).order("name").execute()
     return result.data or []
 
 
@@ -65,7 +65,7 @@ async def delete_project(
         return user
     try:
         client = get_user_client(user["access_token"], user["refresh_token"])
-        client.table("projects").delete().eq("id", project_id).execute()
+        client.table("projects").delete().eq("id", project_id).eq("user_id", user["user_id"]).execute()
     except Exception:
         pass
     response = HTMLResponse(content="")

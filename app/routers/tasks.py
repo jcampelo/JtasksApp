@@ -19,7 +19,14 @@ PRIORITY_ORDER = ["critica", "urgente", "normal"]
 
 def _get_projects(user):
     client = get_user_client(user["access_token"], user["refresh_token"])
-    return (client.table("projects").select("*").order("name").execute().data or [])
+    return (
+        client.table("projects")
+        .select("*")
+        .eq("user_id", user["user_id"])
+        .order("name")
+        .execute()
+        .data or []
+    )
 
 
 def _get_tasks(user):
@@ -27,7 +34,7 @@ def _get_tasks(user):
     return (
         client.table("tasks")
         .select("*, task_updates(*), task_checklist(*)")
-        .neq("status", "discarded")
+        .eq("user_id", user["user_id"])
         .eq("status", "active")
         .order("created_at")
         .execute()
@@ -40,6 +47,7 @@ def _get_completed(user):
     return (
         client.table("tasks")
         .select("*, task_updates(*)")
+        .eq("user_id", user["user_id"])
         .eq("status", "completed")
         .order("completed_at", desc=True)
         .execute()
@@ -114,6 +122,7 @@ def _get_filtered_tasks(user, project="", priority="", sort="priority",
     query = (
         client.table("tasks")
         .select("*, task_updates(*), task_checklist(*)")
+        .eq("user_id", user["user_id"])
         .eq("status", "active")
     )
     if project:
@@ -228,7 +237,7 @@ async def duplicate_task(task_id: str, request: Request, user=Depends(get_curren
         return user
     try:
         client = get_user_client(user["access_token"], user["refresh_token"])
-        original = client.table("tasks").select("*").eq("id", task_id).single().execute().data
+        original = client.table("tasks").select("*").eq("id", task_id).eq("user_id", user["user_id"]).single().execute().data
         client.table("tasks").insert({
             "name": original["name"],
             "project": original.get("project"),
@@ -259,7 +268,7 @@ async def bulk_complete(request: Request, user=Depends(get_current_user)):
         client.table("tasks").update({
             "status": "completed",
             "completed_at": completed_dt,
-        }).eq("id", tid).execute()
+        }).eq("id", tid).eq("user_id", user["user_id"]).execute()
     return _task_list_response(request, user, toast=f"{len(task_ids)} tarefa(s) concluida(s)!")
 
 
@@ -273,7 +282,7 @@ async def bulk_discard(request: Request, user=Depends(get_current_user)):
         return _task_list_response(request, user, toast="Nenhuma tarefa selecionada.")
     client = get_user_client(user["access_token"], user["refresh_token"])
     for tid in task_ids:
-        client.table("tasks").update({"status": "discarded"}).eq("id", tid).execute()
+        client.table("tasks").update({"status": "discarded"}).eq("id", tid).eq("user_id", user["user_id"]).execute()
     return _task_list_response(request, user, toast=f"{len(task_ids)} tarefa(s) descartada(s).")
 
 
@@ -288,7 +297,7 @@ async def bulk_change_priority(request: Request, user=Depends(get_current_user))
         return _task_list_response(request, user, toast="Nenhuma tarefa selecionada.")
     client = get_user_client(user["access_token"], user["refresh_token"])
     for tid in task_ids:
-        client.table("tasks").update({"priority": new_priority}).eq("id", tid).execute()
+        client.table("tasks").update({"priority": new_priority}).eq("id", tid).eq("user_id", user["user_id"]).execute()
     return _task_list_response(request, user, toast=f"Prioridade atualizada para {len(task_ids)} tarefa(s)!")
 
 
@@ -303,7 +312,7 @@ async def bulk_move_project(request: Request, user=Depends(get_current_user)):
         return _task_list_response(request, user, toast="Nenhuma tarefa selecionada.")
     client = get_user_client(user["access_token"], user["refresh_token"])
     for tid in task_ids:
-        client.table("tasks").update({"project": new_project}).eq("id", tid).execute()
+        client.table("tasks").update({"project": new_project}).eq("id", tid).eq("user_id", user["user_id"]).execute()
     return _task_list_response(request, user, toast=f"{len(task_ids)} tarefa(s) movida(s)!")
 
 
@@ -313,7 +322,7 @@ async def discard_task(task_id: str, request: Request, user=Depends(get_current_
         return user
     try:
         client = get_user_client(user["access_token"], user["refresh_token"])
-        client.table("tasks").update({"status": "discarded"}).eq("id", task_id).execute()
+        client.table("tasks").update({"status": "discarded"}).eq("id", task_id).eq("user_id", user["user_id"]).execute()
     except Exception:
         pass
     response = HTMLResponse(content="")
@@ -326,7 +335,7 @@ async def complete_form(task_id: str, request: Request, user=Depends(get_current
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    result = client.table("tasks").select("*").eq("id", task_id).single().execute()
+    result = client.table("tasks").select("*").eq("id", task_id).eq("user_id", user["user_id"]).single().execute()
     task = result.data
     return templates.TemplateResponse(
         "partials/modals/complete_modal.html",
@@ -351,7 +360,7 @@ async def complete_task(
         client.table("tasks").update({
             "status": "completed",
             "completed_at": completed_dt,
-        }).eq("id", task_id).execute()
+        }).eq("id", task_id).eq("user_id", user["user_id"]).execute()
     except Exception:
         pass
 
@@ -368,7 +377,7 @@ async def edit_form(task_id: str, request: Request, user=Depends(get_current_use
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    result = client.table("tasks").select("*").eq("id", task_id).single().execute()
+    result = client.table("tasks").select("*").eq("id", task_id).eq("user_id", user["user_id"]).single().execute()
     task = result.data
     projects = _get_projects(user)
     checklist = (
@@ -405,7 +414,7 @@ async def edit_task(
             "project": project or None,
             "priority": priority,
             "deadline": deadline or None,
-        }).eq("id", task_id).execute()
+        }).eq("id", task_id).eq("user_id", user["user_id"]).execute()
     except Exception:
         pass
 
@@ -436,7 +445,7 @@ async def reopen_task(task_id: str, request: Request, user=Depends(get_current_u
         client.table("tasks").update({
             "status": "pending",
             "completed_at": None,
-        }).eq("id", task_id).execute()
+        }).eq("id", task_id).eq("user_id", user["user_id"]).execute()
     except Exception:
         pass
     # Remove o item da lista sem recarregar a página
@@ -480,6 +489,7 @@ async def calendar_view(
     tasks_raw = (
         client.table("tasks")
         .select("id, name, project, priority, deadline, status")
+        .eq("user_id", user["user_id"])
         .eq("status", "active")
         .not_.is_("deadline", "null")
         .gte("deadline", first_day.isoformat())
@@ -522,7 +532,7 @@ async def get_updates(task_id: str, request: Request, user=Depends(get_current_u
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    task_res = client.table("tasks").select("*").eq("id", task_id).single().execute()
+    task_res = client.table("tasks").select("*").eq("id", task_id).eq("user_id", user["user_id"]).single().execute()
     updates_res = (
         client.table("task_updates")
         .select("*")
@@ -583,7 +593,7 @@ async def delete_update(
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    client.table("task_updates").delete().eq("id", update_id).execute()
+    client.table("task_updates").delete().eq("id", update_id).eq("user_id", user["user_id"]).execute()
     updates_res = (
         client.table("task_updates")
         .select("*")
@@ -648,8 +658,8 @@ async def toggle_checklist_item(
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    item = client.table("task_checklist").select("done").eq("id", item_id).single().execute().data
-    client.table("task_checklist").update({"done": not item["done"]}).eq("id", item_id).execute()
+    item = client.table("task_checklist").select("done").eq("id", item_id).eq("user_id", user["user_id"]).single().execute().data
+    client.table("task_checklist").update({"done": not item["done"]}).eq("id", item_id).eq("user_id", user["user_id"]).execute()
     return _checklist_response(request, client, task_id)
 
 
@@ -663,5 +673,5 @@ async def delete_checklist_item(
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    client.table("task_checklist").delete().eq("id", item_id).execute()
+    client.table("task_checklist").delete().eq("id", item_id).eq("user_id", user["user_id"]).execute()
     return _checklist_response(request, client, task_id)

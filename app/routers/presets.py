@@ -13,12 +13,12 @@ templates = Jinja2Templates(directory="app/templates")
 
 def _get_presets(user):
     client = get_user_client(user["access_token"], user["refresh_token"])
-    return client.table("presets").select("*").order("name").execute().data or []
+    return client.table("presets").select("*").eq("user_id", user["user_id"]).order("name").execute().data or []
 
 
 def _get_projects(user):
     client = get_user_client(user["access_token"], user["refresh_token"])
-    return client.table("projects").select("*").order("name").execute().data or []
+    return client.table("projects").select("*").eq("user_id", user["user_id"]).order("name").execute().data or []
 
 
 @router.get("/presets", response_class=HTMLResponse)
@@ -64,7 +64,7 @@ async def delete_preset(preset_id: str, request: Request, user=Depends(get_curre
     if isinstance(user, RedirectResponse):
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
-    client.table("presets").delete().eq("id", preset_id).execute()
+    client.table("presets").delete().eq("id", preset_id).eq("user_id", user["user_id"]).execute()
     response = HTMLResponse(content="")
     response.headers["HX-Trigger"] = '{"showToast":"Preset removido."}'
     return response
@@ -81,6 +81,7 @@ async def apply_presets(request: Request, user=Depends(get_current_user)):
     existing = (
         client.table("tasks")
         .select("name")
+        .eq("user_id", user["user_id"])
         .eq("status", "active")
         .eq("date", today_str)
         .execute()
