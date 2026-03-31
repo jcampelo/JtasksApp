@@ -15,8 +15,8 @@
         hx-disabled-elt="find .btn-add"
         hx-on::before-request="this.querySelector('.btn-add').textContent='Adicionando...'"
         hx-on::after-request="this.querySelector('.btn-add').textContent='+ Adicionar'; this.reset()">
-    <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
-      <div class="field" style="flex:1;">
+    <div class="form-row">
+      <div class="field full">
         <label>Nome do projeto</label>
         <input name="name" type="text" placeholder="Ex: Projeto Q2" maxlength="80" required />
       </div>
