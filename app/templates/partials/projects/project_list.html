@@ -1,52 +1,54 @@
-<div class="projects-header">
-  <h2>Projetos ({{ projects | length }})</h2>
-</div>
+<div id="projects-container">
+  <div class="projects-header">
+    <h2>Projetos ({{ projects | length }})</h2>
+  </div>
 
-<button class="mobile-add-toggle" onclick="document.querySelector('#projects-add-form').classList.toggle('mobile-open'); this.classList.toggle('active')">
-  <span class="mobile-add-toggle-icon">+</span>
-  <span class="mobile-add-toggle-label">Novo projeto</span>
-</button>
+  <button class="mobile-add-toggle" onclick="document.querySelector('#projects-add-form').classList.toggle('mobile-open'); this.classList.toggle('active')">
+    <span class="mobile-add-toggle-icon">+</span>
+    <span class="mobile-add-toggle-label">Novo projeto</span>
+  </button>
 
-<!-- Formulário adicionar projeto -->
-<div class="add-form" id="projects-add-form" style="margin-bottom:20px;">
-  <form hx-post="/projects"
-        hx-target="#projects-list"
-        hx-swap="outerHTML"
-        hx-disabled-elt="find .btn-add"
-        hx-on::before-request="this.querySelector('.btn-add').textContent='Adicionando...'"
-        hx-on::after-request="this.querySelector('.btn-add').textContent='+ Adicionar'; this.reset()">
-    <div class="form-row">
-      <div class="field full">
-        <label>Nome do projeto</label>
-        <input name="name" type="text" placeholder="Ex: Projeto Q2" maxlength="80" required />
+  <!-- Formulário adicionar projeto -->
+  <div class="add-form" id="projects-add-form" style="margin-bottom:20px;">
+    <form hx-post="/projects"
+          hx-target="#projects-container"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find .btn-add"
+          hx-on::before-request="this.querySelector('.btn-add').textContent='Adicionando...'"
+          hx-on::after-request="this.querySelector('.btn-add').textContent='+ Adicionar'; this.reset()">
+      <div class="form-row">
+        <div class="field full">
+          <label>Nome do projeto</label>
+          <input name="name" type="text" placeholder="Ex: Projeto Q2" maxlength="80" required />
+        </div>
+        <button type="submit" class="btn-add">+ Adicionar</button>
       </div>
-      <button type="submit" class="btn-add">+ Adicionar</button>
-    </div>
-    {% if error %}
-    <div class="error-msg">{{ error }}</div>
-    {% endif %}
-  </form>
-</div>
+      {% if error %}
+      <div class="error-msg">{{ error }}</div>
+      {% endif %}
+    </form>
+  </div>
 
-<div id="projects-list">
-  {% if projects %}
-    {% for proj in projects %}
-    <div class="project-item" id="project-{{ proj.id }}">
-      <span class="project-name">{{ proj.name }}</span>
-      <button class="btn-remove"
-              hx-delete="/projects/{{ proj.id }}"
-              hx-target="#project-{{ proj.id }}"
-              hx-swap="outerHTML"
-              hx-confirm="Remover projeto '{{ proj.name }}'?"
-              hx-disabled-elt="this">
-        Remover
-      </button>
-    </div>
-    {% endfor %}
-  {% else %}
-    <div class="empty-state">
-      <div class="icon">📁</div>
-      Nenhum projeto criado ainda.
-    </div>
-  {% endif %}
+  <div id="projects-list">
+    {% if projects %}
+      {% for proj in projects %}
+      <div class="project-item" id="project-{{ proj.id }}">
+        <span class="project-name">{{ proj.name }}</span>
+        <button class="btn-remove"
+                hx-delete="/projects/{{ proj.id }}"
+                hx-target="#project-{{ proj.id }}"
+                hx-swap="outerHTML"
+                hx-confirm="Remover projeto '{{ proj.name }}'?"
+                hx-disabled-elt="this">
+          Remover
+        </button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="icon">📁</div>
+        Nenhum projeto criado ainda.
+      </div>
+    {% endif %}
+  </div>
 </div>
