@@ -15,12 +15,12 @@ async def performance_data(request: Request, user=Depends(get_current_user)):
     client = get_user_client(user["access_token"], user["refresh_token"])
 
     active = (
-        client.table("tasks").select("name, priority, project")
+        client.table("tasks").select("priority, project")
         .eq("user_id", user["user_id"])
         .eq("status", "active").execute().data or []
     )
     completed = (
-        client.table("tasks").select("name, priority, project")
+        client.table("tasks").select("priority, project")
         .eq("user_id", user["user_id"])
         .eq("status", "completed").execute().data or []
     )
@@ -32,24 +32,13 @@ async def performance_data(request: Request, user=Depends(get_current_user)):
             "normal":  sum(1 for t in tasks if t.get("priority") == "normal"),
         }
 
-    # Tarefas com projeto: agrupa por projeto
-    # Tarefas sem projeto: cada uma aparece com seu próprio nome
-    all_tasks = active + completed
-    project_names = sorted({t["project"] for t in all_tasks if t.get("project")})
-    no_project_names = sorted({t.get("name", "Sem nome") for t in all_tasks if not t.get("project")})
-
+    all_projects = sorted({t.get("project") or "Sem projeto" for t in active + completed})
     project_breakdown = []
-    for proj in project_names:
+    for proj in all_projects:
         project_breakdown.append({
             "name": proj,
-            "active": sum(1 for t in active if t.get("project") == proj),
-            "completed": sum(1 for t in completed if t.get("project") == proj),
-        })
-    for task_name in no_project_names:
-        project_breakdown.append({
-            "name": task_name,
-            "active": sum(1 for t in active if not t.get("project") and t.get("name") == task_name),
-            "completed": sum(1 for t in completed if not t.get("project") and t.get("name") == task_name),
+            "active": sum(1 for t in active if (t.get("project") or "Sem projeto") == proj),
+            "completed": sum(1 for t in completed if (t.get("project") or "Sem projeto") == proj),
         })
     project_breakdown.sort(key=lambda x: x["active"] + x["completed"], reverse=True)
 

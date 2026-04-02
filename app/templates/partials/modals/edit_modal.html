@@ -18,8 +18,8 @@
       </div>
       <div class="field">
         <label>Projeto</label>
-        <select name="project">
-          <option value="">— Sem projeto —</option>
+        <select name="project" required>
+          <option value="" disabled>— Selecione —</option>
           {% for proj in projects %}
           <option value="{{ proj.name }}" {% if task.project == proj.name %}selected{% endif %}>{{ proj.name }}</option>
           {% endfor %}

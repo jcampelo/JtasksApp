@@ -53,8 +53,8 @@
       </div>
       <div class="field">
         <label>Projeto</label>
-        <select name="project">
-          <option value="">— Sem projeto —</option>
+        <select name="project" required>
+          <option value="" disabled selected>— Selecione —</option>
           {% for proj in projects %}
           <option value="{{ proj.name }}">{{ proj.name }}</option>
           {% endfor %}

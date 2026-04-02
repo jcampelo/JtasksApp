@@ -202,7 +202,7 @@ async def filter_tasks(
 async def add_task(
     request: Request,
     name: str = Form(...),
-    project: str = Form(""),
+    project: str = Form(...),
     priority: str = Form("normal"),
     deadline: str = Form(""),
     user=Depends(get_current_user),
@@ -215,7 +215,7 @@ async def add_task(
 
     payload = {
         "name": name,
-        "project": project or None,
+        "project": project,
         "priority": priority,
         "date": today_str,
         "deadline": deadline or None,
@@ -400,7 +400,7 @@ async def edit_task(
     task_id: str,
     request: Request,
     name: str = Form(...),
-    project: str = Form(""),
+    project: str = Form(...),
     priority: str = Form("normal"),
     deadline: str = Form(""),
     user=Depends(get_current_user),
@@ -411,7 +411,7 @@ async def edit_task(
         client = get_user_client(user["access_token"], user["refresh_token"])
         client.table("tasks").update({
             "name": name.strip(),
-            "project": project or None,
+            "project": project,
             "priority": priority,
             "deadline": deadline or None,
         }).eq("id", task_id).eq("user_id", user["user_id"]).execute()

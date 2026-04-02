@@ -22,8 +22,8 @@
     <div class="form-row">
       <div class="field">
         <label>Projeto</label>
-        <select name="project" id="task-project-select">
-          <option value="">— Selecione —</option>
+        <select name="project" id="task-project-select" required>
+          <option value="" disabled selected>— Selecione —</option>
           {% for proj in projects %}
           <option value="{{ proj.name }}">{{ proj.name }}</option>
           {% endfor %}

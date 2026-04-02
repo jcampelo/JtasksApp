@@ -37,7 +37,7 @@ async def list_presets(request: Request, user=Depends(get_current_user)):
 async def add_preset(
     request: Request,
     name: str = Form(...),
-    project: str = Form(""),
+    project: str = Form(...),
     priority: str = Form("normal"),
     user=Depends(get_current_user),
 ):
@@ -46,7 +46,7 @@ async def add_preset(
     client = get_user_client(user["access_token"], user["refresh_token"])
     client.table("presets").insert({
         "name": name.strip(),
-        "project": project or None,
+        "project": project,
         "priority": priority,
         "user_id": user["user_id"],
     }).execute()
