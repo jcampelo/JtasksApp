@@ -46,5 +46,10 @@
   document.addEventListener('DOMContentLoaded', function() {
     htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
   });
+
+  // Atualiza a lista de tarefas ativas em tempo real
+  document.body.addEventListener('refreshTasks', function() {
+    htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
+  });
 </script>
 {% endblock %}

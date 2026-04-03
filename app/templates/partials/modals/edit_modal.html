@@ -58,8 +58,3 @@
     </div>
   </div>
 </div>
-<script>
-  document.body.addEventListener('refreshTasks', function() {
-    htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
-  });
-</script>
