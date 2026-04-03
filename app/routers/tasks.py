@@ -582,7 +582,7 @@ async def add_update(
         "partials/modals/updates_list.html",
         {"request": request, "task_id": task_id, "updates": updates},
     )
-    response.headers["HX-Trigger"] = '{"showToast":"Nota adicionada!"}'
+    response.headers["HX-Trigger"] = '{"showToast":"Nota adicionada!","refreshTasks":"1"}'
     return response
 
 
@@ -608,10 +608,12 @@ async def delete_update(
     updates = updates_res.data or []
     for u in updates:
         u["created_fmt"] = _fmt_datetime(u.get("created_at"))
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "partials/modals/updates_list.html",
         {"request": request, "task_id": task_id, "updates": updates},
     )
+    response.headers["HX-Trigger"] = '{"refreshTasks":"1"}'
+    return response
 
 
 # ── Checklist ─────────────────────────────────────────────────────────────────
@@ -649,7 +651,7 @@ async def add_checklist_item(
         "text": text.strip(),
     }).execute()
     response = _checklist_response(request, client, task_id, user["user_id"])
-    response.headers["HX-Trigger"] = '{"showToast":"Item adicionado!"}'
+    response.headers["HX-Trigger"] = '{"showToast":"Item adicionado!","refreshTasks":"1"}'
     return response
 
 
@@ -665,7 +667,9 @@ async def toggle_checklist_item(
     client = get_user_client(user["access_token"], user["refresh_token"])
     item = client.table("task_checklist").select("done").eq("id", item_id).eq("user_id", user["user_id"]).single().execute().data
     client.table("task_checklist").update({"done": not item["done"]}).eq("id", item_id).eq("user_id", user["user_id"]).execute()
-    return _checklist_response(request, client, task_id, user["user_id"])
+    response = _checklist_response(request, client, task_id, user["user_id"])
+    response.headers["HX-Trigger"] = '{"refreshTasks":"1"}'
+    return response
 
 
 @router.delete("/tasks/{task_id}/checklist/{item_id}", response_class=HTMLResponse)
@@ -679,4 +683,6 @@ async def delete_checklist_item(
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
     client.table("task_checklist").delete().eq("id", item_id).eq("user_id", user["user_id"]).execute()
-    return _checklist_response(request, client, task_id, user["user_id"])
+    response = _checklist_response(request, client, task_id, user["user_id"])
+    response.headers["HX-Trigger"] = '{"refreshTasks":"1"}'
+    return response
