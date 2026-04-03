@@ -1,15 +1,3 @@
-{% if not projects %}
-<!-- Onboarding: sem projetos cadastrados -->
-<div class="onboarding-card">
-  <div class="onboarding-icon">📂</div>
-  <h2 class="onboarding-title">Bem-vindo ao Jtasks!</h2>
-  <p class="onboarding-text">Para criar suas tarefas, primeiro cadastre um projeto.<br>Projetos ajudam a organizar e agrupar suas atividades.</p>
-  <button class="onboarding-btn"
-          onclick="document.querySelector('[data-tab=projetos]').click()">
-    + Criar meu primeiro projeto
-  </button>
-</div>
-{% else %}
 <!-- Toggle mobile para form -->
 <button class="mobile-add-toggle" id="mobile-add-toggle" onclick="document.querySelector('.add-form').classList.toggle('mobile-open'); this.classList.toggle('active')">
   <span class="mobile-add-toggle-icon">+</span>
@@ -34,12 +22,19 @@
     <div class="form-row">
       <div class="field">
         <label>Projeto</label>
+        {% if not projects %}
+        <button type="button" class="no-project-btn"
+                onclick="document.querySelector('[data-tab=projetos]').click()">
+          + Cadastrar projeto
+        </button>
+        {% else %}
         <select name="project" id="task-project-select" required>
           <option value="" disabled selected>— Selecione —</option>
           {% for proj in projects %}
           <option value="{{ proj.name }}">{{ proj.name }}</option>
           {% endfor %}
         </select>
+        {% endif %}
         <span class="error-msg" id="err-project"></span>
       </div>
       <div class="field field-priority">
@@ -165,4 +160,3 @@ function filterBar() {
   };
 }
 </script>
-{% endif %}
