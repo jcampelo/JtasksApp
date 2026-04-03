@@ -384,6 +384,7 @@ async def edit_form(task_id: str, request: Request, user=Depends(get_current_use
         client.table("task_checklist")
         .select("*")
         .eq("task_id", task_id)
+        .eq("user_id", user["user_id"])
         .order("position")
         .order("created_at")
         .execute()
