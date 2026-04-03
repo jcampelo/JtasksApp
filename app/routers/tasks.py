@@ -571,6 +571,7 @@ async def add_update(
         client.table("task_updates")
         .select("*")
         .eq("task_id", task_id)
+        .eq("user_id", user["user_id"])
         .order("created_at", desc=True)
         .execute()
     )
