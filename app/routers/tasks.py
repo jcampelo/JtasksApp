@@ -391,7 +391,7 @@ async def edit_form(task_id: str, request: Request, user=Depends(get_current_use
     )
     return templates.TemplateResponse(
         "partials/modals/edit_modal.html",
-        {"request": request, "task": task, "projects": projects, "checklist": checklist, "error": None},
+        {"request": request, "task": task, "projects": projects, "items": checklist, "error": None},
     )
 
 
