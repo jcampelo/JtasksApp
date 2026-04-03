@@ -1594,3 +1594,39 @@ input[type="submit"]:disabled {
   background: var(--accent-hover);
   transform: translateY(-1px);
 }
+
+/* ══ GUIDE MODAL ══ */
+.guide-modal { max-width: 520px; }
+.guide-content { padding: 8px 0; }
+.guide-step {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  align-items: flex-start;
+}
+.guide-step + .guide-step {
+  border-top: 1px solid var(--card-border);
+}
+.guide-step-number {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.guide-step-body h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.guide-step-body p {
+  font-size: 0.85rem;
+  color: var(--text-second);
+  line-height: 1.5;
+}

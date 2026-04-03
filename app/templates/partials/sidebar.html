@@ -72,8 +72,62 @@
       <span class="nav-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       <span class="nav-item-label">Presets</span>
     </button>
+
+    <button class="nav-item"
+            onclick="document.getElementById('modal-container').innerHTML=document.getElementById('guide-template').innerHTML">
+      <span class="nav-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="nav-item-label">Guia</span>
+    </button>
   </nav>
 </aside>
+
+<template id="guide-template">
+  <div class="modal-backdrop show" onclick="if(event.target===this)document.getElementById('modal-container').innerHTML=''">
+    <div class="modal guide-modal">
+      <div class="modal-header">
+        <h2>Como usar o Jtasks</h2>
+        <button class="btn-close" onclick="document.getElementById('modal-container').innerHTML=''">×</button>
+      </div>
+      <div class="guide-content">
+        <div class="guide-step">
+          <div class="guide-step-number">1</div>
+          <div class="guide-step-body">
+            <h3>Crie um Projeto</h3>
+            <p>Vá em <strong>Projetos</strong> no menu e cadastre pelo menos um. Projetos organizam suas tarefas por contexto.</p>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-number">2</div>
+          <div class="guide-step-body">
+            <h3>Adicione Tarefas</h3>
+            <p>Na tela <strong>Tasks Ativas</strong>, preencha a atividade, selecione o projeto, defina prioridade e prazo.</p>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-number">3</div>
+          <div class="guide-step-body">
+            <h3>Acompanhe o progresso</h3>
+            <p>Use o <strong>checklist</strong> para dividir tarefas em etapas e as <strong>notas</strong> para registrar atualizações.</p>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-number">4</div>
+          <div class="guide-step-body">
+            <h3>Conclua ou descarte</h3>
+            <p>Finalizou? Clique em <strong>concluir</strong>. Não precisa mais? Use <strong>descartar</strong>. Tudo fica no histórico.</p>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-number">5</div>
+          <div class="guide-step-body">
+            <h3>Explore os recursos</h3>
+            <p><strong>Calendario</strong> para visão mensal, <strong>Performance</strong> para acompanhar produtividade e <strong>Notificações</strong> para receber resumos por e-mail.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <!-- Top Bar -->
 <div class="topbar" id="topbar">
