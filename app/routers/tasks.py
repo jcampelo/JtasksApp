@@ -538,6 +538,7 @@ async def get_updates(task_id: str, request: Request, user=Depends(get_current_u
         client.table("task_updates")
         .select("*")
         .eq("task_id", task_id)
+        .eq("user_id", user["user_id"])
         .order("created_at", desc=True)
         .execute()
     )
