@@ -616,11 +616,12 @@ async def delete_update(
 
 # ── Checklist ─────────────────────────────────────────────────────────────────
 
-def _checklist_response(request, client, task_id):
+def _checklist_response(request, client, task_id, user_id):
     items = (
         client.table("task_checklist")
         .select("*")
         .eq("task_id", task_id)
+        .eq("user_id", user_id)
         .order("position")
         .order("created_at")
         .execute()
@@ -647,7 +648,7 @@ async def add_checklist_item(
         "user_id": user["user_id"],
         "text": text.strip(),
     }).execute()
-    response = _checklist_response(request, client, task_id)
+    response = _checklist_response(request, client, task_id, user["user_id"])
     response.headers["HX-Trigger"] = '{"showToast":"Item adicionado!"}'
     return response
 
@@ -664,7 +665,7 @@ async def toggle_checklist_item(
     client = get_user_client(user["access_token"], user["refresh_token"])
     item = client.table("task_checklist").select("done").eq("id", item_id).eq("user_id", user["user_id"]).single().execute().data
     client.table("task_checklist").update({"done": not item["done"]}).eq("id", item_id).eq("user_id", user["user_id"]).execute()
-    return _checklist_response(request, client, task_id)
+    return _checklist_response(request, client, task_id, user["user_id"])
 
 
 @router.delete("/tasks/{task_id}/checklist/{item_id}", response_class=HTMLResponse)
@@ -678,4 +679,4 @@ async def delete_checklist_item(
         return user
     client = get_user_client(user["access_token"], user["refresh_token"])
     client.table("task_checklist").delete().eq("id", item_id).eq("user_id", user["user_id"]).execute()
-    return _checklist_response(request, client, task_id)
+    return _checklist_response(request, client, task_id, user["user_id"])
