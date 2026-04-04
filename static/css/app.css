@@ -272,36 +272,87 @@ body {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
+  position: relative;
 }
 .topbar-user {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.8rem;
+  gap: 9px;
+  font-size: 0.82rem;
   font-weight: 500;
-  color: var(--text-second);
-}
-.topbar-user svg {
-  color: var(--text-muted);
-}
-.topbar-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 8px;
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-}
-.topbar-btn:hover {
-  background: var(--bg-surface2);
   color: var(--text-primary);
-  border-color: var(--input-border);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  font-family: inherit;
 }
+.topbar-user:hover {
+  background: var(--bg-surface2);
+}
+.user-avatar {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.user-email-text {
+  max-width: 150px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chevron {
+  color: var(--text-muted); transition: transform 0.2s;
+}
+.chevron.rotate { transform: rotate(180deg); }
+
+.topbar-dropdown {
+  position: absolute;
+  top: Calc(100% + 5px);
+  right: 0;
+  width: 200px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 25px var(--shadow-sm);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 999;
+}
+.dropdown-header {
+  padding: 14px 16px;
+  background: var(--bg-page);
+}
+.dropdown-title {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+}
+.dropdown-email {
+  font-size: 0.8rem; color: var(--text-primary); font-weight: 600; margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dropdown-divider {
+  height: 1px; background: var(--border-light);
+}
+.dropdown-item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border: none; background: transparent;
+  font-size: 0.85rem; font-weight: 500; color: var(--text-second);
+  text-align: left; cursor: pointer; transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.dropdown-item svg { color: var(--text-muted); }
+.dropdown-item:hover {
+  background: var(--bg-surface2); color: var(--text-primary);
+}
+.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger svg { color: var(--danger); }
+.dropdown-item.danger:hover { background: var(--danger-light); }
+.dropdown-form { margin: 0; }
+
 
 /* ══ MAIN CONTENT ══ */
 .app-wrapper {
@@ -1640,4 +1691,31 @@ input[type="submit"]:disabled {
   font-size: 0.85rem;
   color: var(--text-second);
   line-height: 1.5;
+}
+
+/* -- EMPTY STATE PREMIUM -- */
+.empty-state-premium {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center;
+  background: var(--bg-surface); border: 1px dashed var(--border);
+  border-radius: 12px; margin-top: 20px;
+}
+.empty-icon-wrap {
+  width: 72px; height: 72px; background: var(--accent-light); color: var(--accent);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.empty-state-premium h3 {
+  font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;
+}
+.empty-state-premium p {
+  font-size: 0.85rem; color: var(--text-second); margin-bottom: 25px; max-width: 300px; line-height: 1.5;
+}
+.btn-create-task {
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 10px 20px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.btn-create-task:hover {
+  background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(11,139,120,0.3);
 }

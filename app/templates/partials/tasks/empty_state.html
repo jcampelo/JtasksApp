@@ -1,4 +1,13 @@
-<div class="empty-state">
-  <div class="icon">✅</div>
-  Nenhuma tarefa ativa no momento.
+<div class="empty-state-premium">
+  <div class="empty-icon-wrap">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+  </div>
+  <h3>Tudo sob controle!</h3>
+  <p>Você não tem nenhuma tarefa pendente aqui. Que tal começar a organizar seu dia?</p>
+  <button class="btn-create-task" onclick="var p = document.getElementById('mobile-add-toggle'); if(p && !p.classList.contains('active')) p.click(); setTimeout(()=>document.querySelector('textarea[name=name]').focus(), 100);">
+    Nova Tarefa
+  </button>
 </div>
