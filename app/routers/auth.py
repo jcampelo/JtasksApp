@@ -56,7 +56,7 @@ async def login_submit(
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "error": error_msg, "css_version": _CSS_V},
-            status_code=401,
+            status_code=200,
         )
 
 

@@ -4,7 +4,29 @@
       "Bash(gh repo:*)",
       "Bash(pip install:*)",
       "Bash(python -c \":*)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(findstr /i \"main.py\")",
+      "Bash(timeout 3 ping -n 3 127.0.0.1)",
+      "Bash(timeout 4 ping -n 4 127.0.0.1)",
+      "Bash(timeout 2 ping -n 2 127.0.0.1)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "Bash(sed -i 's/font-family: \"\"Fraunces\"\", serif;//g' \"C:\\\\Users\\\\campe\\\\OneDrive\\\\Área de Trabalho\\\\JtasksApp\\\\static\\\\css\\\\app.css\")",
+      "Bash(sed -i 's/font-family: \"\"Fraunces\"\", serif; letter-spacing: -0.01em;//g' \"C:\\\\Users\\\\campe\\\\OneDrive\\\\Área de Trabalho\\\\JtasksApp\\\\static\\\\css\\\\app.css\")",
+      "Bash(gh run:*)",
+      "Bash(gh workflow:*)",
+      "Bash(powershell -command \"Get-Process -Id 8628 | Stop-Process -Force\")",
+      "Bash(powershell -command \"Get-Process python* | Select-Object Id, Name, Path | Format-Table\")",
+      "Bash(powershell -command \"Stop-Process -Id 2380,10496 -Force\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8080\")",
+      "Bash(curl -s \"http://localhost:8080/auth/login\")",
+      "Bash(Select-String \"app.css\")",
+      "Bash(powershell -command \"Get-Process python* | Stop-Process -Force\")",
+      "Bash(npx:*)",
+      "Skill(code-review:code-review)",
+      "Bash(gh api:*)",
+      "Bash(npm show:*)",
+      "WebSearch"
     ]
   }
 }
