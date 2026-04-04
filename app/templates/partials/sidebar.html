@@ -175,9 +175,9 @@ function switchTab(name, btn) {
   var panel = document.getElementById('panel-' + name);
   panel.classList.add('active');
   if (name === 'performance') { loadPerformance(); }
-  // Loading feedback: show spinner in panel if empty
-  if (!panel.innerHTML.trim() || panel.innerHTML.indexOf('Carregando') > -1) {
-    panel.innerHTML = '<div class="tab-loading"><span class="tab-spinner"></span> Carregando...</div>';
+  // Loading feedback: show pulse loader in panel if empty
+  if (!panel.innerHTML.trim() || panel.innerHTML.indexOf('Carregando') > -1 || panel.innerHTML.indexOf('pulse-loader') > -1) {
+    panel.innerHTML = '<div class="pulse-loader"><div class="pulse-circle"></div><span class="pulse-text">Carregando...</span></div>';
   }
 }
 

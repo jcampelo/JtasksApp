@@ -1065,6 +1065,75 @@ input[type="submit"]:disabled {
 }
 .empty-state .icon { font-size: 2.2rem; margin-bottom: 12px; }
 
+/* ══ SKELETON LOADER ══ */
+.skeleton-loader {
+  padding: 20px 0;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.skeleton-form {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.skeleton-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.skeleton-line {
+  height: 12px;
+  background: linear-gradient(90deg, var(--bg-surface2) 25%, var(--border-light) 50%, var(--bg-surface2) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-pulse {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ══ PULSE LOADER ══ */
+.pulse-loader {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 20px; gap: 20px;
+}
+.pulse-circle {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: relative;
+  animation: pulse-scale 1.4s ease-in-out infinite;
+}
+.pulse-circle::before,
+.pulse-circle::after {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+.pulse-circle::after {
+  inset: -6px;
+  animation-delay: 0.4s;
+}
+.pulse-text {
+  font-size: 0.8rem; color: var(--text-muted); font-weight: 500;
+  letter-spacing: 0.03em;
+  animation: pulse-fade 1.4s ease-in-out infinite;
+}
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.85); opacity: 0.6; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes pulse-fade {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
 /* ══ DAYS BADGE ══ */
 .days-badge {
   display: inline-block; border-radius: 4px; padding: 1px 7px;
