@@ -38,7 +38,19 @@
         <input type="date" name="deadline" value="{{ task.deadline or '' }}" />
       </div>
       {% if error %}<div class="modal-err">{{ error }}</div>{% endif %}
-      <button type="submit" class="modal-confirm-btn">Salvar alterações</button>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button type="button" class="btn-secondary"
+                hx-post="/tasks/{{ task.id }}/duplicate"
+                hx-target="#panel-ativas"
+                hx-swap="innerHTML"
+                hx-on::before-request="this.textContent='Duplicando...'"
+                hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML=''"
+                style="background:var(--bg-surface2); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:12px; font-weight:600; cursor:pointer;"
+                title="Clonar esta tarefa">
+          📋 Duplicar
+        </button>
+        <button type="submit" class="modal-confirm-btn" style="flex:1;">Salvar alterações</button>
+      </div>
     </form>
 
     <!-- Checklist -->

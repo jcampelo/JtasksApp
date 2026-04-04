@@ -462,7 +462,7 @@ main {
 /* ══ ADD FORM ══ */
 .add-form {
   background: var(--bg-surface);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 18px;
   margin-bottom: 20px;
   border: 1px solid var(--border);
@@ -470,6 +470,11 @@ main {
   grid-template-columns: 1fr;
   gap: 13px;
   transition: background 0.2s;
+}
+.add-form-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-muted);
 }
 .add-form .field { display: flex; flex-direction: column; gap: 4px; }
 .add-form .field.full { width: 100%; }
@@ -747,6 +752,48 @@ input[type="submit"]:disabled {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* Priority toggle button */
+.btn-priority-toggle {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-priority-toggle:hover {
+  transform: scale(1.3);
+}
+.btn-priority-toggle .priority-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  transition: background 0.2s;
+}
+.btn-priority-toggle.normal .priority-dot  { background: #94a3b8; }
+.btn-priority-toggle.urgente .priority-dot { background: #f4a261; }
+.btn-priority-toggle.critica .priority-dot { background: #e63946; box-shadow: 0 0 6px rgba(230,57,70,0.45); }
+
+.priority-picker { position: relative; }
+.priority-dropdown {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  margin-top: 6px; background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 20px var(--shadow-sm);
+  padding: 6px; z-index: 50; white-space: nowrap;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.priority-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border: none; background: transparent;
+  font-size: 0.8rem; font-weight: 500; color: var(--text-second);
+  border-radius: 6px; cursor: pointer; transition: background 0.12s;
+  font-family: inherit; text-align: left;
+}
+.priority-option:hover { background: var(--bg-surface2); }
+.priority-option.active {
+  background: var(--accent-light); color: var(--accent); font-weight: 600;
+}
+.priority-option .pri-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
 }
 
 /* Action buttons */
@@ -1058,6 +1105,59 @@ input[type="submit"]:disabled {
   flex-shrink: 0;
 }
 .reopen-btn:hover { background: var(--success); color: #fff; }
+
+/* ══ EXPORT SECTION ══ */
+.export-section {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px; margin-bottom: 20px;
+}
+.export-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 14px;
+}
+.export-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.export-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 10px;
+  background: var(--bg-page); border: 1px solid var(--border);
+  text-decoration: none; color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.export-card:hover {
+  border-color: var(--accent); box-shadow: 0 4px 14px rgba(11,139,120,0.12);
+  transform: translateY(-1px);
+}
+.export-card-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.export-card-icon.active {
+  background: var(--accent-light); color: var(--accent);
+}
+.export-card-icon.completed {
+  background: rgba(34,197,94,0.1); color: #22c55e;
+}
+.export-card-info {
+  display: flex; flex-direction: column; gap: 2px; flex: 1;
+}
+.export-card-label {
+  font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+}
+.export-card-desc {
+  font-size: 0.7rem; color: var(--text-muted);
+}
+.export-card-arrow {
+  color: var(--text-muted); transition: transform 0.15s, color 0.15s;
+}
+.export-card:hover .export-card-arrow {
+  color: var(--accent); transform: translateX(3px);
+}
+@media (max-width: 600px) {
+  .export-cards { grid-template-columns: 1fr; }
+}
 
 .empty-state {
   text-align: center; padding: 52px 16px;

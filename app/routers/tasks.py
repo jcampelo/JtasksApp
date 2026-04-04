@@ -169,6 +169,38 @@ def _task_list_response(request, user, toast=None, status_code=200):
     return response
 
 
+PRIORITY_CYCLE = {"normal": "urgente", "urgente": "critica", "critica": "normal"}
+PRIORITY_LABELS = {"normal": "Normal", "urgente": "Urgente", "critica": "Crítica"}
+
+
+@router.post("/tasks/{task_id}/toggle-priority", response_class=HTMLResponse)
+async def toggle_priority(task_id: str, request: Request, user=Depends(get_current_user)):
+    if isinstance(user, RedirectResponse):
+        return user
+    client = get_user_client(user["access_token"], user["refresh_token"])
+    task = client.table("tasks").select("priority").eq("id", task_id).eq("user_id", user["user_id"]).single().execute().data
+    current = task.get("priority", "normal")
+    new_priority = PRIORITY_CYCLE.get(current, "normal")
+    client.table("tasks").update({"priority": new_priority}).eq("id", task_id).eq("user_id", user["user_id"]).execute()
+    return _task_list_response(request, user, toast=f"Prioridade → {PRIORITY_LABELS[new_priority]}")
+
+
+@router.post("/tasks/{task_id}/set-priority", response_class=HTMLResponse)
+async def set_priority(
+    task_id: str,
+    request: Request,
+    priority: str = Query("normal"),
+    user=Depends(get_current_user),
+):
+    if isinstance(user, RedirectResponse):
+        return user
+    if priority not in PRIORITY_LABELS:
+        priority = "normal"
+    client = get_user_client(user["access_token"], user["refresh_token"])
+    client.table("tasks").update({"priority": priority}).eq("id", task_id).eq("user_id", user["user_id"]).execute()
+    return _task_list_response(request, user, toast=f"Prioridade → {PRIORITY_LABELS[priority]}")
+
+
 # ── Rotas ────────────────────────────────────────────────────────────────────
 
 @router.get("/tasks", response_class=HTMLResponse)
