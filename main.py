@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
-from app.routers import auth, app_router, tasks, projects, presets, performance, notify, export
+from app.routers import auth, app_router, tasks, projects, presets, performance, notify, export, ideas
 from app.scheduler import start_scheduler, stop_scheduler
 
 
@@ -29,6 +29,7 @@ app.include_router(presets.router)
 app.include_router(performance.router)
 app.include_router(notify.router)
 app.include_router(export.router)
+app.include_router(ideas.router)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,217 @@
+<div id="ideas-container">
+  <div class="projects-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <h2>💡 Ideias de Projetos ({{ ideas | length }})</h2>
+  </div>
+
+  <button class="mobile-add-toggle" onclick="document.querySelector('#ideas-add-form').classList.toggle('mobile-open'); this.classList.toggle('active')">
+    <span class="mobile-add-toggle-icon">+</span>
+    <span class="mobile-add-toggle-label">Nova ideia</span>
+  </button>
+
+  <!-- Formulário nova ideia -->
+  <div class="add-form" id="ideas-add-form" style="margin-bottom:20px;">
+    <div class="add-form-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+      Registrar Ideia
+    </div>
+    <form hx-post="/ideas"
+          hx-target="#ideas-container"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find .btn-add"
+          hx-on::before-request="this.querySelector('.btn-add').textContent='Salvando...'"
+          hx-on::after-request="this.querySelector('.btn-add').textContent='+ Registrar'; this.reset()">
+
+      <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div class="field full" style="grid-column: 1 / -1;">
+          <label>Título da ideia</label>
+          <input name="title" type="text" placeholder="Ex: Automatizar relatórios mensais" maxlength="120" required />
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <div class="field">
+          <label>Descrição / Contexto</label>
+          <textarea name="description" placeholder="Descreva a ideia, contexto da reunião, benefícios esperados..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div class="field">
+          <label>Aplicar em (Projeto)</label>
+          <select name="project">
+            <option value="">Novo projeto / Indefinido</option>
+            {% for proj in projects %}
+            <option value="{{ proj.name }}">{{ proj.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Stakeholders</label>
+          <input name="stakeholders" type="text" placeholder="Ex: João, Maria, TI" maxlength="200" />
+        </div>
+        <div class="field">
+          <label>Potencial de subir</label>
+          <select name="potential">
+            <option value="alta">🔥 Alta — logo sobe</option>
+            <option value="media" selected>⚡ Média — precisa amadurecer</option>
+            <option value="baixa">💤 Baixa — ideia exploratória</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="submit" class="btn-add">+ Registrar</button>
+      </div>
+
+      {% if error %}
+      <div class="error-msg">{{ error }}</div>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Filtro por status -->
+  <div class="filter-toolbar" style="margin-bottom:16px;" x-data="{ filter: 'todas' }">
+    <div class="filter-pills">
+      <button class="filter-pill" :class="{ active: filter === 'todas' }" @click="filter = 'todas'">Todas</button>
+      <button class="filter-pill" :class="{ active: filter === 'nova' }" @click="filter = 'nova'">🆕 Nova</button>
+      <button class="filter-pill" :class="{ active: filter === 'em_analise' }" @click="filter = 'em_analise'">🔍 Em Análise</button>
+      <button class="filter-pill" :class="{ active: filter === 'aprovada' }" @click="filter = 'aprovada'">✅ Aprovada</button>
+      <button class="filter-pill" :class="{ active: filter === 'descartada' }" @click="filter = 'descartada'">❌ Descartada</button>
+    </div>
+  </div>
+
+  <!-- Mural de Ideias -->
+  <div id="ideas-list">
+    {% if ideas %}
+      {% for idea in ideas %}
+      <div class="idea-card idea-potential-{{ idea.potential }}"
+           id="idea-{{ idea.id }}"
+           x-data="{ showActions: false }"
+           x-show="$el.closest('[x-data]') ? ($el.closest('.filter-toolbar + #ideas-list') ? true : true) : true">
+
+        <div class="idea-card-header">
+          <div class="idea-status-badge idea-status-{{ idea.status }}">
+            {% if idea.status == 'nova' %}🆕 Nova
+            {% elif idea.status == 'em_analise' %}🔍 Em Análise
+            {% elif idea.status == 'aprovada' %}✅ Aprovada
+            {% elif idea.status == 'descartada' %}❌ Descartada
+            {% endif %}
+          </div>
+          <div class="idea-potential-badge idea-pot-{{ idea.potential }}">
+            {% if idea.potential == 'alta' %}🔥 Alta
+            {% elif idea.potential == 'media' %}⚡ Média
+            {% elif idea.potential == 'baixa' %}💤 Baixa
+            {% endif %}
+          </div>
+          <button class="idea-menu-btn" @click="showActions = !showActions" @click.outside="showActions = false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </button>
+
+          <!-- Menu de ações -->
+          <div class="idea-actions-menu" x-show="showActions" x-transition>
+            <form hx-patch="/ideas/{{ idea.id }}/status" hx-target="#ideas-container" hx-swap="outerHTML" style="margin:0">
+              <input type="hidden" name="status" value="nova">
+              <button type="submit" class="idea-action-item">🆕 Marcar como Nova</button>
+            </form>
+            <form hx-patch="/ideas/{{ idea.id }}/status" hx-target="#ideas-container" hx-swap="outerHTML" style="margin:0">
+              <input type="hidden" name="status" value="em_analise">
+              <button type="submit" class="idea-action-item">🔍 Em Análise</button>
+            </form>
+            <form hx-patch="/ideas/{{ idea.id }}/status" hx-target="#ideas-container" hx-swap="outerHTML" style="margin:0">
+              <input type="hidden" name="status" value="aprovada">
+              <button type="submit" class="idea-action-item">✅ Aprovar</button>
+            </form>
+            <form hx-patch="/ideas/{{ idea.id }}/status" hx-target="#ideas-container" hx-swap="outerHTML" style="margin:0">
+              <input type="hidden" name="status" value="descartada">
+              <button type="submit" class="idea-action-item">❌ Descartar</button>
+            </form>
+            <div class="dropdown-divider"></div>
+            <button class="idea-action-item danger"
+                    hx-delete="/ideas/{{ idea.id }}"
+                    hx-target="#idea-{{ idea.id }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Remover esta ideia permanentemente?">
+              🗑️ Excluir
+            </button>
+          </div>
+        </div>
+
+        <div class="idea-card-body">
+          <h3 class="idea-title">{{ idea.title }}</h3>
+          {% if idea.description %}
+          <p class="idea-description">{{ idea.description }}</p>
+          {% endif %}
+        </div>
+
+        <div class="idea-card-footer">
+          {% if idea.project %}
+          <span class="idea-tag idea-tag-project">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            {{ idea.project }}
+          </span>
+          {% else %}
+          <span class="idea-tag idea-tag-new-project">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo projeto
+          </span>
+          {% endif %}
+          {% if idea.stakeholders %}
+          <span class="idea-tag idea-tag-stakeholders">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {{ idea.stakeholders }}
+          </span>
+          {% endif %}
+          <span class="idea-date">
+            {{ idea.created_at[:10] }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="icon">💡</div>
+        Nenhuma ideia registrada ainda.<br>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Registre ideias que surgirem nas suas reuniões!</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// Filtro client-side de ideias
+(function() {
+  var toolbar = document.querySelector('#ideas-container .filter-toolbar');
+  if (!toolbar) return;
+  toolbar.addEventListener('click', function(e) {
+    var btn = e.target.closest('.filter-pill');
+    if (!btn) return;
+    var filter = btn.textContent.trim();
+    var map = { 'Todas': 'todas', '🆕 Nova': 'nova', '🔍 Em Análise': 'em_analise', '✅ Aprovada': 'aprovada', '❌ Descartada': 'descartada' };
+    var status = map[filter] || 'todas';
+    // Update active pill
+    toolbar.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    // Filter cards
+    document.querySelectorAll('#ideas-list .idea-card').forEach(function(card) {
+      if (status === 'todas') {
+        card.style.display = '';
+      } else {
+        var badge = card.querySelector('.idea-status-badge');
+        var cardStatus = '';
+        if (badge) {
+          if (badge.classList.contains('idea-status-nova')) cardStatus = 'nova';
+          else if (badge.classList.contains('idea-status-em_analise')) cardStatus = 'em_analise';
+          else if (badge.classList.contains('idea-status-aprovada')) cardStatus = 'aprovada';
+          else if (badge.classList.contains('idea-status-descartada')) cardStatus = 'descartada';
+        }
+        card.style.display = (cardStatus === status) ? '' : 'none';
+      }
+    });
+  });
+})();
+
+// Listener para refresh após delete
+document.body.addEventListener('refreshIdeas', function() {
+  htmx.ajax('GET', '/ideas', {target: '#panel-ideias', swap: 'innerHTML'});
+});
+</script>

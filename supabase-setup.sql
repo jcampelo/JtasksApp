@@ -51,6 +51,19 @@ CREATE TABLE task_updates (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ideias de projetos (mural de reuniões)
+CREATE TABLE ideas (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title        TEXT NOT NULL,
+  description  TEXT,
+  project      TEXT,
+  stakeholders TEXT,
+  potential    TEXT CHECK (potential IN ('alta','media','baixa')) DEFAULT 'media',
+  status       TEXT CHECK (status IN ('nova','em_analise','aprovada','descartada')) DEFAULT 'nova',
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
 
 -- -------------------------------------------------------------
 -- 2. ROW LEVEL SECURITY (RLS)
@@ -61,11 +74,13 @@ ALTER TABLE tasks        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE presets      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE task_updates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ideas        ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "own_tasks"    ON tasks        FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "own_projects" ON projects     FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "own_presets"  ON presets      FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "own_updates"  ON task_updates FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "own_ideas"    ON ideas        FOR ALL USING (auth.uid() = user_id);
 
 
 -- -------------------------------------------------------------
