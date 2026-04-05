@@ -1,3 +1,9 @@
+{% if not smtp_configured %}
+<div style="margin-bottom:16px;padding:12px 16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;font-size:0.85rem;color:#92400e;">
+  ⚠ <strong>SMTP não configurado no servidor.</strong> As variáveis de ambiente SMTP precisam ser preenchidas na VPS pelo administrador.
+</div>
+{% endif %}
+
 <div class="notify-status-card">
   <div>
     {% if config.enabled and config.schedule_time %}
@@ -5,7 +11,7 @@
     {% elif config.email_to %}
       <span style="color:var(--text-muted);">⏸ Envio automático desativado</span>
     {% else %}
-      <span style="color:var(--text-muted);">⚙️ Configure o email abaixo...</span>
+      <span style="color:var(--text-muted);">⚙️ Configure o email de destino abaixo...</span>
     {% endif %}
   </div>
   <button class="btn-send-now"
@@ -21,37 +27,29 @@
 <div id="notify-status-msg" style="margin-bottom:12px;font-size:0.85rem;min-height:20px;"></div>
 
 <div class="notify-config-card">
-  <h3>Configuração SMTP</h3>
+  <h3>Configuração de Notificações</h3>
+
+  {% if smtp_from %}
+  <div style="font-size:0.85rem;color:var(--text-muted);margin:0 0 16px;padding:12px;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid #3b82f6;">
+    <p style="margin:0 0 6px;">📨 <strong>Importante:</strong> Todos os emails de notificação do sistema serão enviados por <strong>{{ smtp_from }}</strong>.</p>
+    <p style="margin:0;font-size:0.8rem;">Recomendamos adicionar este endereço aos seus contatos confiáveis e marcá-lo como "Não é Spam". Caso não receba seu resumo, por favor, <strong>verifique sua pasta de Spam ou Lixo Eletrônico</strong>.</p>
+  </div>
+  {% endif %}
+
   <form hx-post="/notify/config"
         hx-target="#notify-status-msg"
         hx-swap="innerHTML"
         hx-disabled-elt="find .btn-save-config"
         hx-on::before-request="this.querySelector('.btn-save-config').textContent='Salvando...'"
-        hx-on::after-request="this.querySelector('.btn-save-config').textContent='Salvar configuracao'">
+        hx-on::after-request="this.querySelector('.btn-save-config').textContent='Salvar configuração'">
     <div class="notify-grid">
       <div class="notify-field">
-        <label>Destinatário</label>
-        <input type="email" name="email_to" value="{{ config.email_to or '' }}" placeholder="voce@empresa.com" />
+        <label>Seu email de destino</label>
+        <input type="email" name="email_to" value="{{ config.email_to or '' }}" placeholder="voce@email.com" required />
       </div>
       <div class="notify-field">
         <label>Horário de envio</label>
         <input type="time" name="schedule_time" value="{{ config.schedule_time or '08:00' }}" />
-      </div>
-      <div class="notify-field">
-        <label>Servidor SMTP</label>
-        <input type="text" name="smtp_host" value="{{ config.smtp_host or '' }}" placeholder="smtp.gmail.com" />
-      </div>
-      <div class="notify-field">
-        <label>Porta</label>
-        <input type="number" name="smtp_port" value="{{ config.smtp_port or 587 }}" />
-      </div>
-      <div class="notify-field">
-        <label>Usuário SMTP</label>
-        <input type="email" name="smtp_user" value="{{ config.smtp_user or '' }}" placeholder="conta@gmail.com" />
-      </div>
-      <div class="notify-field">
-        <label>Senha{% if config.has_password %} (preenchida){% endif %}</label>
-        <input type="password" name="smtp_password" placeholder="{% if config.has_password %}Deixe em branco para manter{% else %}App Password{% endif %}" />
       </div>
     </div>
     <div class="notify-check-row">

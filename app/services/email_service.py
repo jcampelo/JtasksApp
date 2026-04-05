@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.config import settings
+from email.utils import formataddr
 
 
 def _supabase_get(path: str):
@@ -317,26 +318,30 @@ def build_email_html(user_id: str = "") -> tuple[str, str]:
     return html, subject
 
 
-def send_email(cfg: dict, html_body: str, subject: str) -> None:
+def send_email(email_to: str, html_body: str, subject: str) -> None:
+    """Envia email usando as credenciais SMTP configuradas no .env do servidor."""
+    from_addr = settings.smtp_user
+    from_header = formataddr((settings.smtp_from_name, from_addr))
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"]    = cfg["smtp_user"]
-    msg["To"]      = cfg["email_to"]
+    msg["From"]    = from_header
+    msg["To"]      = email_to
     msg.attach(MIMEText("Abra este email em um cliente que suporte HTML.", "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-    port = int(cfg.get("smtp_port", 587))
-    host = cfg["smtp_host"]
+    port = settings.smtp_port
+    host = settings.smtp_host
     ctx  = ssl.create_default_context()
 
     if port == 465:
         with smtplib.SMTP_SSL(host, port, context=ctx, timeout=15) as smtp:
-            smtp.login(cfg["smtp_user"], cfg["smtp_password"])
-            smtp.sendmail(cfg["smtp_user"], cfg["email_to"], msg.as_string())
+            smtp.login(from_addr, settings.smtp_password)
+            smtp.sendmail(from_addr, email_to, msg.as_string())
     else:
         with smtplib.SMTP(host, port, timeout=15) as smtp:
             smtp.ehlo()
             smtp.starttls(context=ctx)
             smtp.ehlo()
-            smtp.login(cfg["smtp_user"], cfg["smtp_password"])
-            smtp.sendmail(cfg["smtp_user"], cfg["email_to"], msg.as_string())
+            smtp.login(from_addr, settings.smtp_password)
+            smtp.sendmail(from_addr, email_to, msg.as_string())

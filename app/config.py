@@ -10,5 +10,12 @@ class Settings(BaseSettings):
     secret_key: str
     port: int = 8080
 
+    # SMTP — Zoho Mail (configurado na VPS, não exposto ao usuário)
+    smtp_host: str = "smtp.zoho.com"
+    smtp_port: int = 465
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_name: str = "Jtasks"
+
 
 settings = Settings()
