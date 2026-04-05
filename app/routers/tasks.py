@@ -1,3 +1,19 @@
+"""
+Router de Tarefas (CRUD + Filtros + Calendário + Atualizações)
+
+Endpoints para gerenciar tarefas no JtasksApp:
+  - Criar/editar/duplicar tarefas
+  - Marcar como concluída, descartada ou reabrida
+  - Filtrar por projeto, prioridade, busca
+  - Visualizar em calendário (deadlines)
+  - Adicionar notas (updates) e checklist
+
+Padrões HTMX:
+  - Endpoints retornam HTML (partials) para ser renderizado no navegador
+  - Response headers indicam ações: toast (mensagem), refresh (recarregar lista)
+  - Modais são preenchidas via HTMX (sem page reload)
+"""
+
 import json
 import calendar as cal_mod
 from datetime import date, datetime, timezone
@@ -9,20 +25,24 @@ from fastapi.templating import Jinja2Templates
 from app.deps import get_current_user
 from app.services.supabase_client import get_user_client
 
-router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+router = APIRouter()  # Agrupa todos os endpoints de tarefas
+templates = Jinja2Templates(directory="app/templates")  # Motor Jinja2 para renderizar HTML
 
+# Ordem de prioridade para ordenação (crítica > urgente > normal)
 PRIORITY_ORDER = ["critica", "urgente", "normal"]
 
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELPER FUNCTIONS — Funções utilitárias para queries comuns
+# ═══════════════════════════════════════════════════════════════════════════════
 
 def _get_projects(user):
+    """Busca todos os projetos do usuário, ordenados alfabeticamente."""
     client = get_user_client(user["access_token"], user["refresh_token"])
     return (
         client.table("projects")
         .select("*")
-        .eq("user_id", user["user_id"])
+        .eq("user_id", user["user_id"])  # CRÍTICO: filtro por user_id
         .order("name")
         .execute()
         .data or []
@@ -30,12 +50,13 @@ def _get_projects(user):
 
 
 def _get_tasks(user):
+    """Busca todas as tarefas ATIVAS do usuário com relacionados (updates, checklist)."""
     client = get_user_client(user["access_token"], user["refresh_token"])
     return (
         client.table("tasks")
-        .select("*, task_updates(*), task_checklist(*)")
-        .eq("user_id", user["user_id"])
-        .eq("status", "active")
+        .select("*, task_updates(*), task_checklist(*)")  # Inclui sub-tabelas
+        .eq("user_id", user["user_id"])  # CRÍTICO: filtro por user_id
+        .eq("status", "active")  # Apenas tarefas ativas (não concluídas/descartadas)
         .order("created_at")
         .execute()
         .data or []
@@ -43,29 +64,48 @@ def _get_tasks(user):
 
 
 def _get_completed(user):
+    """Busca todas as tarefas CONCLUÍDAS do usuário, mais recentes primeiro."""
     client = get_user_client(user["access_token"], user["refresh_token"])
     return (
         client.table("tasks")
         .select("*, task_updates(*)")
-        .eq("user_id", user["user_id"])
-        .eq("status", "completed")
-        .order("completed_at", desc=True)
+        .eq("user_id", user["user_id"])  # CRÍTICO: filtro por user_id
+        .eq("status", "completed")  # Apenas tarefas marcadas como concluídas
+        .order("completed_at", desc=True)  # Mais recentes primeiro
         .execute()
         .data or []
     )
 
 
 def _enrich_task(task):
-    """Adiciona campos calculados para o template."""
+    """
+    Enriquece tarefa com campos calculados para renderização no template.
+
+    Adiciona:
+      - update_count: número de notas na tarefa
+      - checklist_total: total de itens do checklist
+      - checklist_done: quantos items estão marcados ✓
+      - days_badge: HTML com ícone e data (ex: "🔥 10/05 (3d atraso)")
+      - urgency_class: CSS class para cores visuais (overdue, soon)
+      - created_fmt, completed_fmt: datas formatadas (DD/MM/YYYY)
+    """
     today = date.today()
     dl = task.get("deadline")
+
+    # Contadores
     task["update_count"] = len(task.get("task_updates") or [])
     checklist = task.get("task_checklist") or []
     task["checklist_total"] = len(checklist)
     task["checklist_done"] = sum(1 for item in checklist if item.get("done"))
+
+    # Badge visual para deadline (ícone + data + dias restantes)
     task["days_badge"] = _days_badge(dl, today)
+
+    # Datas formatadas para exibição
     task["created_fmt"] = _fmt_date(task.get("created_at"))
     task["completed_fmt"] = _fmt_datetime(task.get("completed_at"))
+
+    # Urgência visual: atrasada ou próxima (< 3 dias)
     if dl:
         try:
             diff = (date.fromisoformat(dl) - today).days
@@ -74,16 +114,27 @@ def _enrich_task(task):
             task["urgency_class"] = ""
     else:
         task["urgency_class"] = ""
+
     return task
 
 
 def _days_badge(deadline_str, today):
+    """
+    Gera HTML visual para deadline com ícone + data + dias restantes.
+
+    Retorna:
+      🔥 (vermelho): tarefa atrasada
+      ⏰ (amarelo): vence hoje
+      ⚡ (laranja): vence em 1-3 dias
+      📅 (cinza): vence em > 3 dias
+    """
     if not deadline_str:
         return ""
     try:
         dl = date.fromisoformat(deadline_str)
         diff = (dl - today).days
-        formatted = dl.strftime("%d/%m/%Y")
+        formatted = dl.strftime("%d/%m/%Y")  # Formata como DD/MM/YYYY
+
         if diff < 0:
             return f'<span class="days-badge overdue">🔥 {formatted} ({abs(diff)}d atraso)</span>'
         elif diff == 0:
@@ -96,6 +147,7 @@ def _days_badge(deadline_str, today):
 
 
 def _fmt_date(iso_str):
+    """Formata timestamp ISO 8601 para DD/MM/YYYY. Retorna '—' se nulo."""
     if not iso_str:
         return "—"
     try:
@@ -106,6 +158,7 @@ def _fmt_date(iso_str):
 
 
 def _fmt_datetime(iso_str):
+    """Formata timestamp ISO 8601 para DD/MM/YYYY HH:MM. Retorna '—' se nulo."""
     if not iso_str:
         return "—"
     try:
@@ -117,22 +170,39 @@ def _fmt_datetime(iso_str):
 
 def _get_filtered_tasks(user, project="", priority="", sort="priority",
                         search="", overdue_only=False):
-    """Busca tarefas ativas com filtros opcionais."""
+    """
+    Busca tarefas ativas com filtros e ordenação opcionais.
+
+    Parâmetros:
+      project: filtra por nome do projeto
+      priority: filtra por prioridade (critica, urgente, normal)
+      sort: tipo de ordenação (priority, deadline_asc, created_asc, created_desc)
+      search: busca textual no nome da tarefa (case-insensitive)
+      overdue_only: retorna apenas tarefas atrasadas
+
+    Fluxo:
+      1. Monta query no Supabase com filtros
+      2. Enriquece tarefas com campos calculados (badges, urgência)
+      3. Ordena por prioridade em Python (Supabase não suporta ORDER BY CASE)
+      4. Filtra atrasadas se solicitado
+    """
     client = get_user_client(user["access_token"], user["refresh_token"])
     query = (
         client.table("tasks")
         .select("*, task_updates(*), task_checklist(*)")
-        .eq("user_id", user["user_id"])
+        .eq("user_id", user["user_id"])  # CRÍTICO: filtro por user_id
         .eq("status", "active")
     )
+
+    # Aplicar filtros opcionais
     if project:
         query = query.eq("project", project)
     if priority:
         query = query.eq("priority", priority)
     if search:
-        query = query.ilike("name", f"%{search}%")
+        query = query.ilike("name", f"%{search}%")  # ilike = case-insensitive
 
-    # Ordenação no Supabase
+    # Aplicar ordenação no banco de dados (Supabase)
     if sort == "deadline_asc":
         query = query.order("deadline", nullsfirst=False)
     elif sort == "created_desc":
@@ -142,14 +212,16 @@ def _get_filtered_tasks(user, project="", priority="", sort="priority",
     else:
         query = query.order("created_at")
 
+    # Executar query e enriquecer tarefas
     raw = query.execute().data or []
     tasks = [_enrich_task(t) for t in raw]
 
-    # Ordenação por prioridade em Python (Supabase não suporta ORDER BY CASE)
+    # Ordenação por prioridade em PYTHON (Supabase não suporta ORDER BY CASE)
+    # Isso garante ordenação consistente: crítica → urgente → normal
     if sort == "priority":
         tasks.sort(key=lambda t: PRIORITY_ORDER.index(t.get("priority", "normal")))
 
-    # Filtro pós-enrich: somente atrasadas
+    # Filtro final: manter apenas tarefas atrasadas (após enrich ter calculado urgency_class)
     if overdue_only:
         tasks = [t for t in tasks if t.get("urgency_class") == "task-overdue"]
 
@@ -157,31 +229,70 @@ def _get_filtered_tasks(user, project="", priority="", sort="priority",
 
 
 def _task_list_response(request, user, toast=None, status_code=200):
+    """
+    Monta resposta HTML com lista de tarefas ativas.
+
+    Parâmetros:
+      toast: mensagem para mostrar no topo (opcional)
+      status_code: código HTTP da resposta (200 ou 201)
+
+    Retorna:
+      TemplateResponse renderizando partials/tasks/task_list.html
+      Header HX-Trigger: {"showToast": "mensagem"} se houver toast
+    """
     tasks = [_enrich_task(t) for t in _get_tasks(user)]
     projects = _get_projects(user)
+
     response = templates.TemplateResponse(
         "partials/tasks/task_list.html",
         {"request": request, "tasks": tasks, "projects": projects},
         status_code=status_code,
     )
+
+    # Se houver mensagem de sucesso/erro, adiciona ao header HTMX
     if toast:
         response.headers["HX-Trigger"] = json.dumps({"showToast": toast})
+
     return response
 
 
-PRIORITY_CYCLE = {"normal": "urgente", "urgente": "critica", "critica": "normal"}
-PRIORITY_LABELS = {"normal": "Normal", "urgente": "Urgente", "critica": "Crítica"}
+# Ciclos de prioridade e labels para exibição
+PRIORITY_CYCLE = {"normal": "urgente", "urgente": "critica", "critica": "normal"}  # Botão cíclico
+PRIORITY_LABELS = {"normal": "Normal", "urgente": "Urgente", "critica": "Crítica"}  # Textos em português
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS DE TAREFAS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Padrão HTMX: endpoints POST/DELETE retornam HTML + headers HX-Trigger
+# HX-Trigger = {"showToast": "msg", "refreshTasks": "1", etc}
+# ═══════════════════════════════════════════════════════════════════════════════
 
 
 @router.post("/tasks/{task_id}/toggle-priority", response_class=HTMLResponse)
 async def toggle_priority(task_id: str, request: Request, user=Depends(get_current_user)):
+    """
+    Alterna prioridade da tarefa de forma cíclica.
+
+    Fluxo: normal → urgente → crítica → normal
+
+    HTMX: Clique no ícone de prioridade → POST /tasks/{task_id}/toggle-priority
+          → Retorna lista atualizada + toast
+    """
     if isinstance(user, RedirectResponse):
         return user
+
     client = get_user_client(user["access_token"], user["refresh_token"])
+
+    # Busca prioridade atual
     task = client.table("tasks").select("priority").eq("id", task_id).eq("user_id", user["user_id"]).single().execute().data
     current = task.get("priority", "normal")
-    new_priority = PRIORITY_CYCLE.get(current, "normal")
+    new_priority = PRIORITY_CYCLE.get(current, "normal")  # Próximo no ciclo
+
+    # Atualiza no banco
     client.table("tasks").update({"priority": new_priority}).eq("id", task_id).eq("user_id", user["user_id"]).execute()
+
+    # Retorna lista atualizada com toast de sucesso
     return _task_list_response(request, user, toast=f"Prioridade → {PRIORITY_LABELS[new_priority]}")
 
 

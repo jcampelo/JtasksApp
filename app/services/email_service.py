@@ -1,3 +1,16 @@
+"""
+Serviço de Email — Construir e enviar relatórios diários
+
+Fluxo:
+  1. build_email_html(user_id) → busca tarefas via REST API → monta HTML complexo
+  2. send_email(email_to, html, subject) → conecta SMTP → envia MIMEMultipart
+
+Usar APENAS via scheduler.py (email diário automático)
+ou endpoint /notify/send-email (manual)
+
+⚠️ Usa service_key do Supabase (bypassa RLS) — SEMPRE filtrar user_id manualmente!
+"""
+
 import smtplib
 import ssl
 import urllib.request
@@ -11,6 +24,18 @@ from email.utils import formataddr
 
 
 def _supabase_get(path: str):
+    """
+    Faz request HTTP REST ao Supabase com service_key.
+
+    ⚠️ IMPORTANTE: Usa service_key que BYPASSA RLS!
+                   Filtro de user_id DEVE estar na URL (path) manualmente!
+
+    Uso:
+      _supabase_get("/rest/v1/tasks?user_id=eq.{uuid}&status=eq.active")
+
+    Não fazer:
+      _supabase_get("/rest/v1/tasks?status=eq.active")  # ❌ Vazaria dados!
+    """
     url = settings.supabase_url + path
     req = urllib.request.Request(url, headers={
         "apikey": settings.supabase_service_key,
@@ -22,16 +47,43 @@ def _supabase_get(path: str):
 
 
 def build_email_html(user_id: str = "") -> tuple[str, str]:
+    """
+    Constrói HTML do email diário (relatório de tarefas).
+
+    Parâmetros:
+      user_id: UUID do usuário (obrigatório para filtrar no REST)
+
+    Retorna:
+      tuple: (html, subject)
+        - html: string HTML formatada para email
+        - subject: título do email (ex: "Jtasks — Resumo 2026-04-05")
+
+    Conteúdo do email:
+      1. Header com data por extenso (ex: "Sexta-feira, 5 de abril de 2026")
+      2. Resumo do dia: contadores de ativas/concluídas/descartadas + taxa
+      3. Seção de alertas: tarefas atrasadas e vencendo em ≤3 dias
+      4. Tarefas ativas com prioridade, deadline, última nota
+      5. Tarefas concluídas hoje
+      6. Tarefas descartadas hoje
+      7. Resumo por projeto e por prioridade
+
+    Design: HTML/CSS inline (sem arquivo CSS externo)
+            Cores JEMS: navy (#1a1a2e), vermelho (#e63946), laranja (#ea580c)
+    """
     today_iso = date.today().isoformat()
     today_dt  = date.today()
 
+    # Meses e dias em português
     MESES = ["janeiro","fevereiro","março","abril","maio","junho",
              "julho","agosto","setembro","outubro","novembro","dezembro"]
     DIAS  = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira",
              "Sexta-feira","Sábado","Domingo"]
+
+    # Data por extenso (ex: "Sexta-feira, 5 de abril de 2026")
     dia_semana = DIAS[today_dt.weekday()]
     data_fmt   = f"{dia_semana}, {today_dt.day} de {MESES[today_dt.month-1]} de {today_dt.year}"
 
+    # Filtro REST: &user_id=eq.{uuid} para respeitar segurança
     uid_filter = f"&user_id=eq.{user_id}" if user_id else ""
 
     try:
@@ -319,29 +371,64 @@ def build_email_html(user_id: str = "") -> tuple[str, str]:
 
 
 def send_email(email_to: str, html_body: str, subject: str) -> None:
-    """Envia email usando as credenciais SMTP configuradas no .env do servidor."""
+    """
+    Envia email via SMTP com credenciais do servidor.
+
+    Parâmetros:
+      email_to: destinatário (ex: usuario@example.com)
+      html_body: conteúdo em HTML (gerado por build_email_html)
+      subject: assunto do email
+
+    Fluxo:
+      1. Monta estrutura MIMEMultipart (suporta text + HTML)
+      2. Define headers: Subject, From, To
+      3. Cria contexto SSL seguro
+      4. Conecta ao servidor SMTP (Zoho Mail por padrão)
+      5. Autentica com credenciais do .env
+      6. Envia mensagem
+
+    Portas SMTP:
+      - 465: SMTP_SSL (TLS automático desde conexão)
+      - 587: SMTP + STARTTLS (TLS após conexão)
+
+    Credenciais (do .env):
+      - smtp_host: smtp.zoho.com
+      - smtp_port: 465
+      - smtp_user: noreply@company.com
+      - smtp_password: senha (gitignored)
+
+    ⚠️ Se falhar, exceção é propagada (caller trata erro)
+    """
     from_addr = settings.smtp_user
     from_header = formataddr((settings.smtp_from_name, from_addr))
 
+    # Cria mensagem MIME multipart (permite partes alternativas)
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = from_header
     msg["To"]      = email_to
+
+    # Anexa versão plain-text como fallback (clientes antigos)
     msg.attach(MIMEText("Abra este email em um cliente que suporte HTML.", "plain", "utf-8"))
+
+    # Anexa versão HTML (primária)
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     port = settings.smtp_port
     host = settings.smtp_host
-    ctx  = ssl.create_default_context()
+    ctx  = ssl.create_default_context()  # Contexto SSL com certificados padrão
 
+    # Dois modos SMTP dependendo da porta
     if port == 465:
+        # SMTP_SSL: TLS desde o início (conexão segura imediata)
         with smtplib.SMTP_SSL(host, port, context=ctx, timeout=15) as smtp:
             smtp.login(from_addr, settings.smtp_password)
             smtp.sendmail(from_addr, email_to, msg.as_string())
     else:
+        # SMTP + STARTTLS: conexão desencriptada, depois upgrade para TLS
         with smtplib.SMTP(host, port, timeout=15) as smtp:
-            smtp.ehlo()
-            smtp.starttls(context=ctx)
-            smtp.ehlo()
+            smtp.ehlo()  # Anuncia cliente SMTP
+            smtp.starttls(context=ctx)  # Upgrade para TLS
+            smtp.ehlo()  # Anuncia novamente em modo seguro
             smtp.login(from_addr, settings.smtp_password)
             smtp.sendmail(from_addr, email_to, msg.as_string())

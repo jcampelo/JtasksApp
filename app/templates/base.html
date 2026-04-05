@@ -1,14 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!-- Meta tags obrigatórios -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Título (pode ser overridado por {% block title %}) -->
   <title>{% block title %}Jtasks{% endblock %}</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans (tipografia corporativa) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon (ícone da aba no navegador) -->
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+
+  <!-- CSS principal do app (v={{ css_version }} = cache busting) -->
   <link rel="stylesheet" href="/static/css/app.css?v={{ css_version }}" />
+
+  <!-- Dark mode: carrega preferência de localStorage ANTES de renderizar DOM -->
+  <!-- Evita flash de light mode se usuário prefere dark mode -->
   <script>
     (function() {
       var t = localStorage.getItem("jtasks-theme");
@@ -16,38 +28,57 @@
     })();
   </script>
 </head>
+
 <body>
-  <!-- Barra de progresso global -->
+  <!-- Barra de progresso global (ativa durante requisições HTMX) -->
+  <!-- Mostra progresso visual enquanto server responde -->
   <div id="global-progress" class="global-progress"></div>
 
+  <!-- Bloco principal de conteúdo (overridado por páginas filhas) -->
   {% block content %}{% endblock %}
 
-  <!-- Alpine.js -->
+  <!-- ===== BIBLIOTECAS CDN ===== -->
+
+  <!-- Alpine.js: reatividade frontend leve (sem framework pesado) -->
+  <!-- defer: carrega async, executa após DOM ready -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
-  <!-- HTMX -->
+
+  <!-- HTMX: requisições AJAX simples (POST/GET) para endpoints FastAPI -->
+  <!-- Retorna HTML que substitui partes da página (sem SPA) -->
   <script src="https://unpkg.com/htmx.org@2/dist/htmx.min.js"></script>
-  <!-- Chart.js -->
+
+  <!-- Chart.js: gráficos de produtividade (aba Performance) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-  <!-- Driver.js -->
+
+  <!-- Driver.js: tours guiados (onboarding visual) -->
   <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 
+  <!-- Bloco scripts (overridado por páginas filhas) -->
   {% block scripts %}{% endblock %}
 
-  <!-- Global loading bar -->
+  <!-- ===== BARRA DE PROGRESSO GLOBAL ===== -->
+  <!-- Mostra loading bar quando HTMX faz requisição -->
   <script>
+    // Ativa barra ao iniciar requisição HTMX
     document.body.addEventListener("htmx:beforeRequest", function() {
       document.getElementById("global-progress").classList.add("active");
     });
+
+    // Desativa barra quando resposta chega (sucesso)
     document.body.addEventListener("htmx:afterRequest", function() {
       document.getElementById("global-progress").classList.remove("active");
     });
+
+    // Desativa barra em caso de erro HTTP (4xx, 5xx)
     document.body.addEventListener("htmx:responseError", function() {
       document.getElementById("global-progress").classList.remove("active");
     });
   </script>
 
-  <!-- Custom confirm modal -->
+  <!-- ===== MODAL DE CONFIRMAÇÃO CUSTOMIZADO ===== -->
+  <!-- Usada pelo HTMX quando hx-confirm="..." está presente em um elemento -->
+  <!-- Detecta ações destrutivas (descartar, remover, deletar) e muda cor para vermelho -->
   <div id="confirm-backdrop" class="modal-backdrop" onclick="if(event.target===this)_confirmCancel()">
     <div class="modal confirm-modal">
       <div class="confirm-modal-icon" id="confirm-icon"></div>
@@ -63,16 +94,22 @@
   <script>
     var _confirmCb = null;
 
+    // Listener HTMX: evento "htmx:confirm" (antes de requisição com hx-confirm)
     document.addEventListener('htmx:confirm', function(e) {
       if (!e.detail.question) return;
-      e.preventDefault();
+      e.preventDefault();  // Não envia requisição ainda
+
       var q = e.detail.question;
-      var issue = e.detail.issueRequest;
+      var issue = e.detail.issueRequest;  // Função que realmente faz requisição
+
+      // Detecta se é ação destrutiva (palavras-chave)
       var destructive = /descartar|remover|excluir|deletar/i.test(q);
 
+      // Popula modal com mensagem
       document.getElementById('confirm-message').textContent = q;
       document.getElementById('confirm-title').textContent = destructive ? 'Atenção' : 'Confirmar';
 
+      // Escolhe ícone: ⚠️ vermelho se destrutiva, ℹ️ azul se confirmação normal
       var icon = document.getElementById('confirm-icon');
       if (destructive) {
         icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
@@ -82,21 +119,30 @@
         icon.className = 'confirm-modal-icon confirm-icon-accent';
       }
 
+      // Botão OK muda cor conforme tipo
       var okBtn = document.getElementById('confirm-btn-ok');
       okBtn.className = destructive ? 'confirm-btn-ok confirm-btn-danger' : 'confirm-btn-ok confirm-btn-accent';
 
+      // Armazena callback: quando OK for clicado, executa issue(true)
       _confirmCb = function() { issue(true); };
+
+      // Mostra modal
       document.getElementById('confirm-backdrop').classList.add('show');
     });
 
+    // Confirma e executa callback
     function _confirmOk() {
       document.getElementById('confirm-backdrop').classList.remove('show');
       if (_confirmCb) { _confirmCb(); _confirmCb = null; }
     }
+
+    // Cancela modal sem executar
     function _confirmCancel() {
       document.getElementById('confirm-backdrop').classList.remove('show');
       _confirmCb = null;
     }
+
+    // Atalhos: Escape cancela, Enter confirma
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') _confirmCancel();
       if (e.key === 'Enter') {
@@ -106,15 +152,24 @@
     });
   </script>
 
-  <!-- Toast global listener -->
+  <!-- ===== TOAST GLOBAL (notificações no topo) ===== -->
+  <!-- Event: showToast disparado via HX-Trigger do endpoint FastAPI -->
+  <!-- Exemplo: response.headers["HX-Trigger"] = json.dumps({"showToast": "Tarefa criada!"}) -->
   <script>
     document.body.addEventListener("showToast", function(e) {
+      // Extrai mensagem (pode ser string simples ou objeto com value+error)
       var msg = e.detail && e.detail.value ? e.detail.value : e.detail;
       var isError = e.detail && e.detail.error;
+
+      // Busca elemento toast na página
       var t = document.getElementById("toast");
       if (!t) return;
+
+      // Popula mensagem e aplica classe (show, ou show + error)
       t.textContent = msg;
       t.className = "show" + (isError ? " error" : "");
+
+      // Auto-fecha após 3 segundos
       clearTimeout(t._timer);
       t._timer = setTimeout(function() { t.className = ""; }, 3000);
     });
