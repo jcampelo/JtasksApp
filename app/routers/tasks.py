@@ -36,7 +36,7 @@ def _get_tasks(user):
         .select("*, task_updates(*), task_checklist(*)")
         .eq("user_id", user["user_id"])
         .eq("status", "active")
-        .order("created_at")
+        .order("created_at", desc=True)
         .execute()
         .data or []
     )
@@ -140,7 +140,7 @@ def _get_filtered_tasks(user, project="", priority="", sort="priority",
     elif sort == "created_asc":
         query = query.order("created_at")
     else:
-        query = query.order("created_at")
+        query = query.order("created_at", desc=True)
 
     raw = query.execute().data or []
     tasks = [_enrich_task(t) for t in raw]
