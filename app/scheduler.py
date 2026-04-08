@@ -4,6 +4,8 @@ from apscheduler.triggers.cron import CronTrigger
 from app.config import settings
 from app.services.notify_config import load_all_configs
 from app.services.email_service import build_email_html, send_email
+from app.services.supabase_client import get_service_client
+from datetime import date
 
 _scheduler = BackgroundScheduler()
 
@@ -26,6 +28,28 @@ def _run_email_job(cfg: dict):
         print(f"[scheduler] Email enviado para {email_to}: {subject}")
     except Exception as e:
         print(f"[scheduler] Erro ao enviar para {email_to}: {e}")
+
+
+def _run_overdueDate_job():
+    """Converte tarefas vencidas (deadline < hoje) para críticas automaticamente"""
+    try:
+        client = get_service_client()
+        today = date.today().isoformat()
+        
+        # update() no supabase não suporta facilmente 'where != X' com o postgrest python de forma simples em uma só query p/ updates massivos?
+        # Supabase python client suporta chained filters
+        response = client.table("tasks") \
+            .update({"priority": "critica"}) \
+            .lt("deadline", today) \
+            .eq("status", "active") \
+            .neq("priority", "critica") \
+            .execute()
+        
+        count = len(response.data) if response.data else 0
+        if count > 0:
+            print(f"[scheduler] {count} tarefas vencidas atualizadas para prioridade crítica.")
+    except Exception as e:
+        print(f"[scheduler] Erro ao atualizar tarefas vencidas: {e}")
 
 
 def reschedule():
@@ -58,7 +82,19 @@ def reschedule():
 
 
 def start_scheduler():
+    # Job diário para verificação de tarefas expiradas à meia-noite
+    _scheduler.add_job(
+        _run_overdueDate_job,
+        CronTrigger(hour=0, minute=5, timezone="America/Sao_Paulo"),
+        id="overdue_tasks_daily",
+        replace_existing=True,
+    )
+    
     _scheduler.start()
+    
+    # Rodar imediatamente no startup
+    _run_overdueDate_job()
+    
     reschedule()
     print("[scheduler] APScheduler iniciado")
 
