@@ -8,17 +8,17 @@
 
 ## Stack Tecnológica
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Backend | FastAPI (Python 3.11+) |
-| Templates | Jinja2 |
-| Interatividade | HTMX |
-| Banco de dados | Supabase (PostgreSQL) |
-| Autenticação | Supabase Auth (server-side session) |
-| Email | SMTP via smtplib |
-| Scheduler | APScheduler |
-| Export | openpyxl (xlsx) |
-| Gráficos | Chart.js v4 (CDN) |
+| Camada | Tecnologia | Para que serve no projeto |
+|--------|-----------|--------------------------|
+| Backend | FastAPI (Python 3.11+) | Processa todas as requisições HTTP, define as rotas da API e aplica as regras de negócio (criação, edição e filtros de tarefas) |
+| Templates | Jinja2 | Gera o HTML das páginas no servidor, renderizando dados do banco diretamente nas views |
+| Interatividade | HTMX | Permite atualizar partes da tela (listas, modais, toasts) sem recarregar a página inteira, substituindo a necessidade de um framework JavaScript pesado |
+| Banco de dados | Supabase (PostgreSQL) | Armazena tarefas, projetos, presets, checklists e histórico de atualizações — com isolamento por usuário via Row Level Security |
+| Autenticação | Supabase Auth (server-side session) | Gerencia login, logout e renovação de tokens; a sessão é mantida no servidor (não no browser) |
+| Email | SMTP via smtplib | Envia o resumo diário de tarefas para o e-mail do usuário, usando as credenciais SMTP configuradas por ele |
+| Scheduler | APScheduler | Agenda e dispara o envio automático de e-mail no horário definido por cada usuário, rodando em background junto com o servidor |
+| Export | openpyxl (xlsx) | Gera planilhas Excel com as tarefas filtradas para download |
+| Gráficos | Chart.js v4 (CDN) | Renderiza os gráficos de desempenho (tarefas concluídas por período) diretamente no navegador |
 
 ---
 
