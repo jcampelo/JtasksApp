@@ -64,3 +64,50 @@ async def login_submit(
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/auth/login", status_code=302)
+
+
+@router.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse(url="/app", status_code=302)
+    return templates.TemplateResponse("register.html", {"request": request, "error": None, "success": False, "css_version": _CSS_V})
+
+
+@router.post("/register", response_class=HTMLResponse)
+async def register_submit(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+):
+    try:
+        client = create_client(settings.supabase_url, settings.supabase_anon_key)
+        result = client.auth.sign_up({"email": email, "password": password})
+
+        if result.session:
+            user = result.user
+            request.session["user"] = {
+                "access_token": result.session.access_token,
+                "refresh_token": result.session.refresh_token,
+                "expires_at": result.session.expires_at,
+                "user_id": str(user.id),
+                "email": user.email,
+            }
+            response = HTMLResponse(content="", status_code=200)
+            response.headers["HX-Redirect"] = "/app"
+            return response
+
+        # Email confirmation required
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": None, "success": True, "css_version": _CSS_V},
+        )
+
+    except Exception as e:
+        error_msg = "Não foi possível criar a conta."
+        if "already registered" in str(e).lower() or "already been registered" in str(e).lower():
+            error_msg = "Este email já está cadastrado."
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": error_msg, "success": False, "css_version": _CSS_V},
+            status_code=200,
+        )
