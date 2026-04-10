@@ -1662,15 +1662,11 @@ input[type="submit"]:disabled {
     flex-shrink: 1;
     min-width: 0;
   }
-  .topbar-user span,
-  .topbar-user svg { display: none; }
-  .topbar-user::after {
-    content: attr(data-email-short);
-    font-size: 0;
-  }
-  /* Hide email text on mobile, keep buttons */
+  /* No mobile: mostrar só o avatar, sem email e sem chevron */
   .topbar-right { gap: 6px; }
-  .topbar-user { display: none; }
+  .topbar-user { gap: 0; padding: 4px; background: transparent; }
+  .user-email-text { display: none; }
+  .topbar-user .chevron { display: none; }
   .topbar-btn { padding: 5px 7px; }
 
   /* ── App wrapper ── */
