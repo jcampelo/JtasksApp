@@ -12,14 +12,22 @@ async def save_theme(request: Request, user=Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
 
-    body = await request.json()
-    theme = body.get("theme", "light")
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Body inválido."}, status_code=400)
+
+    theme = body.get("theme")
     if theme not in ("light", "dark"):
         return JSONResponse({"ok": False, "error": "invalid theme"}, status_code=400)
 
     client = get_user_client(user["access_token"], user["refresh_token"])
-    client.table("user_preferences").upsert(
-        {"user_id": user["user_id"], "theme": theme}
-    ).execute()
+    try:
+        client.table("user_preferences").upsert(
+            {"user_id": user["user_id"], "theme": theme},
+            on_conflict="user_id"
+        ).execute()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Erro ao salvar preferência."}, status_code=500)
 
     return JSONResponse({"ok": True})
