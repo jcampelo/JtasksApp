@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.deps import get_current_user
+from app.services.supabase_client import get_user_client
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -27,7 +28,18 @@ async def root(request: Request):
 async def app_page(request: Request, user=Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
+
+    try:
+        client = get_user_client(user["access_token"], user["refresh_token"])
+        prefs = client.table("user_preferences") \
+            .select("theme") \
+            .eq("user_id", user["user_id"]) \
+            .execute()
+        user_theme = prefs.data[0]["theme"] if prefs.data else "light"
+    except Exception:
+        user_theme = "light"
+
     return templates.TemplateResponse(
         "pages/app.html",
-        {"request": request, "user": user, "css_version": _CSS_V},
+        {"request": request, "user": user, "css_version": _CSS_V, "user_theme": user_theme},
     )
