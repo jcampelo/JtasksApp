@@ -26,6 +26,12 @@
       .sidebar-group-title:first-child {
         margin-top: 10px;
       }
+      @media (max-width: 1024px) {
+        .sidebar-group-title, .sidebar:hover .sidebar-group-title {
+          display: none !important;
+          opacity: 0 !important;
+        }
+      }
     </style>
 
     <div class="sidebar-group-title">Gestão</div>
