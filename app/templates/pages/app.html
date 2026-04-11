@@ -56,9 +56,39 @@
     htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
   });
 
-  // Atualiza a lista de tarefas ativas em tempo real
+  // Atualiza a lista de tarefas ativas em tempo real via eventos do frontend
   document.body.addEventListener('refreshTasks', function() {
     htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
   });
+
+  // Auto-refresh inteligente (Polling) a cada 10 segundos
+  setInterval(function() {
+    // Evita atualizar se o usuário estiver com um form foco (escrevendo notas/tarefas)
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+    
+    if (isTyping) return;
+
+    // Checa qual é a aba atual e requisita as atualizações do servidor HTMX
+    const activeBtn = document.querySelector('.nav-item.active');
+    if (!activeBtn) return;
+
+    const tab = activeBtn.getAttribute('data-tab');
+    
+    // Mapa das rotas por painel
+    const routes = {
+      'ativas': { url: '/tasks', target: '#panel-ativas' },
+      'notas': { url: '/notes', target: '#panel-notas' },
+      'ideias': { url: '/ideas', target: '#panel-ideias' },
+      'concluidas': { url: '/tasks/completed', target: '#panel-concluidas' },
+      'calendario': { url: '/tasks/calendar', target: '#panel-calendario' },
+      'projetos': { url: '/projects', target: '#panel-projetos' }
+    };
+    
+    // Atualiza o painel ativo sem recarregar a página inteira
+    if (routes[tab]) {
+      htmx.ajax('GET', routes[tab].url, {target: routes[tab].target, swap: 'innerHTML'});
+    }
+  }, 10000);
 </script>
 {% endblock %}

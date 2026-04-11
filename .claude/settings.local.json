@@ -26,7 +26,11 @@
       "Skill(code-review:code-review)",
       "Bash(gh api:*)",
       "Bash(npm show:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(wc -l /c/Users/campe/projetos-claude-code/JtasksApp/*.py /c/Users/campe/projetos-claude-code/JtasksApp/app/*.py /c/Users/campe/projetos-claude-code/JtasksApp/app/routers/*.py /c/Users/campe/projetos-claude-code/JtasksApp/app/services/*.py)",
+      "Bash(wc -l /c/Users/campe/projetos-claude-code/JtasksApp/app/templates/*.html /c/Users/campe/projetos-claude-code/JtasksApp/app/templates/pages/*.html /c/Users/campe/projetos-claude-code/JtasksApp/app/templates/partials/**/*.html /c/Users/campe/projetos-claude-code/JtasksApp/static/css/*.css /c/Users/campe/projetos-claude-code/JtasksApp/static/js/*.js)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c \"import json,sys; runs=json.load\\(sys.stdin\\); [print\\(f'{r[\\\\\"number\\\\\"]:4} | {r[\\\\\"conclusion\\\\\"] or \\\\\"running\\\\\":10} | {r[\\\\\"databaseId\\\\\"]} | {r[\\\\\"displayTitle\\\\\"]}'\\) for r in runs]\")"
     ]
   }
 }

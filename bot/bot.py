@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import asyncio
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -68,7 +69,7 @@ async def _process_text(text: str, update: Update, context: ContextTypes.DEFAULT
     _clear_expired_pending(chat_id)
 
     try:
-        result = groq_client.interpret_text(text)
+        result = await asyncio.to_thread(groq_client.interpret_text, text)
     except Exception as e:
         logger.error(f"Erro LLM: {e}")
         await update.message.reply_text(
@@ -257,7 +258,7 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         voice = update.message.voice
         tg_file = await context.bot.get_file(voice.file_id)
         audio_bytes = bytes(await tg_file.download_as_bytearray())
-        text = groq_client.transcribe_audio(audio_bytes)
+        text = await asyncio.to_thread(groq_client.transcribe_audio, audio_bytes)
         if not text:
             await update.message.reply_text(
                 "Não consegui entender o áudio. Pode repetir com mais clareza?"
