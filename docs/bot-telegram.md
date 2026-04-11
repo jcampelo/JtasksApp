@@ -104,13 +104,13 @@ sudo systemctl stop jtasks-bot
 
 ## Atualizar o bot no VPS
 
-O deploy é automático via CI/CD (push na branch `master`). O serviço do FastAPI (`jtasks`) é reiniciado automaticamente. O bot (`jtasks-bot`) **não é reiniciado automaticamente** — reinicie manualmente após atualizações:
+O deploy é automático via CI/CD (push na branch `master`). O serviço do FastAPI (`jtasks`) e do bot (`jtasks-bot`) são reiniciados automaticamente pelo pipeline do GitHub Actions (`.github/workflows/deploy.yml`).
+
+Caso precise reiniciar manualmente algum dia:
 
 ```bash
 sudo systemctl restart jtasks-bot
 ```
-
-> Considere adicionar o restart do bot ao workflow de deploy `.github/workflows/deploy.yml` se quiser automação completa.
 
 ---
 
