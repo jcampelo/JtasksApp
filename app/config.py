@@ -17,5 +17,12 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from_name: str = "Jtasks"
 
+    # Telegram Bot
+    telegram_bot_token: str = ""
+    groq_api_key: str = ""
+    bot_api_key: str = ""
+    bot_owner_user_id: str = ""
+    jtasks_internal_url: str = "http://localhost:8000"
+
 
 settings = Settings()
