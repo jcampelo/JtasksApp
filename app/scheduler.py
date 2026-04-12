@@ -90,7 +90,8 @@ def _run_telegram_job(cfg: dict):
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "parse_mode": "Markdown",
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
     }
     if keyboard:
         payload["reply_markup"] = json.dumps({"inline_keyboard": keyboard})
@@ -125,7 +126,7 @@ def reschedule():
         except Exception:
             h, m = 8, 0
 
-        trigger = CronTrigger(hour=h, minute=m, timezone="America/Sao_Paulo")
+        trigger = CronTrigger(hour=h, minute=m, timezone="America/Manaus")
 
         if cfg.get("enabled"):
             _scheduler.add_job(
@@ -148,7 +149,7 @@ def start_scheduler():
     # Job diário para verificação de tarefas expiradas à meia-noite
     _scheduler.add_job(
         _run_overdueDate_job,
-        CronTrigger(hour=0, minute=5, timezone="America/Sao_Paulo"),
+        CronTrigger(hour=0, minute=5, timezone="America/Manaus"),
         id="overdue_tasks_daily",
         replace_existing=True,
     )

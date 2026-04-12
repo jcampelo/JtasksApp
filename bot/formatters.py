@@ -89,40 +89,68 @@ def format_idea_created(title: str) -> str:
     return f"💡 Ideia registrada: *{title}*."
 
 
+def _escape_html(text: str) -> str:
+    """Escapa caracteres especiais para parse_mode=HTML do Telegram."""
+    if not text:
+        return ""
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
 def _fmt_deadline(deadline: Optional[str]) -> str:
     """Formata o deadline em texto amigável com dias restantes."""
     if not deadline:
         return ""
-    from datetime import date
+    from datetime import date, datetime
+    import pytz
     try:
         dl = date.fromisoformat(deadline)
-        today = date.today()
+        today = datetime.now(pytz.timezone("America/Manaus")).date()
         diff = (dl - today).days
         if diff < 0:
-            return f" ⚠️ vencida há {abs(diff)}d"
+            return f"⚠️ vencida há {abs(diff)}d"
         elif diff == 0:
-            return " 🔥 vence hoje"
+            return "🔥 vence hoje"
         elif diff == 1:
-            return " ⏰ vence amanhã"
+            return "⏰ vence amanhã"
         else:
-            return f" ({diff}d)"
+            return f"🗓 {diff}d"
     except Exception:
-        return f" ({deadline})"
+        return str(deadline)
+
+
+def _clean_name(name: str, limit: int = 70) -> str:
+    """Remove quebras de linha e limita o tamanho do nome."""
+    if not name:
+        return ""
+    cleaned = " ".join(str(name).split())
+    if len(cleaned) > limit:
+        cleaned = cleaned[: limit - 1].rstrip() + "…"
+    return cleaned
 
 
 def format_daily_summary(tasks: list, notes: list, ideas: list) -> str:
-    """Monta o resumo diário para envio pelo Telegram."""
-    from datetime import date
-    today = date.today().strftime("%d/%m/%Y")
+    """Monta o resumo diário para envio pelo Telegram (parse_mode=HTML)."""
+    from datetime import datetime
+    import pytz
+    today = datetime.now(pytz.timezone("America/Manaus")).strftime("%d/%m/%Y")
 
-    lines = [f"📅 *Resumo do dia — {today}*\n"]
+    SEP = "━━━━━━━━━━━━━━━"
+    lines = [
+        f"🗓 <b>Resumo do dia</b>",
+        f"<i>{today}</i>",
+        SEP,
+    ]
 
-    # Tarefas agrupadas por prioridade
     priority_order = ["critica", "urgente", "normal"]
     priority_titles = {
-        "critica": "🔴 Críticas",
-        "urgente": "🟠 Urgentes",
-        "normal": "⚪ Normais",
+        "critica": "🔴 <b>Críticas</b>",
+        "urgente": "🟠 <b>Urgentes</b>",
+        "normal": "⚪ <b>Normais</b>",
     }
 
     tasks_by_priority = {p: [] for p in priority_order}
@@ -133,37 +161,53 @@ def format_daily_summary(tasks: list, notes: list, ideas: list) -> str:
 
     has_tasks = any(tasks_by_priority[p] for p in priority_order)
     if has_tasks:
-        lines.append("*📋 Tarefas ativas:*")
+        lines.append(f"📋 <b>Tarefas ativas ({len(tasks)})</b>")
         for p in priority_order:
             group = tasks_by_priority[p]
             if not group:
                 continue
-            lines.append(f"\n{priority_titles[p]}:")
+            lines.append("")
+            lines.append(priority_titles[p])
             for t in group:
-                name = t.get("name", "")
+                name = _escape_html(_clean_name(t.get("name", "")))
+                project = t.get("project")
                 deadline_str = _fmt_deadline(t.get("deadline"))
-                project = f" [{t['project']}]" if t.get("project") else ""
-                lines.append(f"  • {name}{project}{deadline_str}")
-    else:
-        lines.append("✨ Nenhuma tarefa ativa no momento.")
 
-    # Notas recentes (últimas 5)
+                meta_parts = []
+                if project:
+                    meta_parts.append(f"📁 {_escape_html(project)}")
+                if deadline_str:
+                    meta_parts.append(deadline_str)
+
+                lines.append(f"▪️ {name}")
+                if meta_parts:
+                    lines.append(f"   <i>{' · '.join(meta_parts)}</i>")
+    else:
+        lines.append("✨ <i>Nenhuma tarefa ativa no momento.</i>")
+
     if notes:
-        lines.append(f"\n*📝 Notas recentes ({min(len(notes), 5)}):*")
+        lines.append("")
+        lines.append(SEP)
+        lines.append(f"📝 <b>Notas recentes ({min(len(notes), 5)})</b>")
         for n in notes[:5]:
             content = n.get("content", "")
-            preview = content[:70] + "…" if len(content) > 70 else content
-            lines.append(f"  • {preview}")
+            preview = _clean_name(content, limit=80)
+            lines.append(f"▪️ {_escape_html(preview)}")
 
-    # Ideias recentes (últimas 5)
     if ideas:
-        lines.append(f"\n*💡 Ideias ({min(len(ideas), 5)}):*")
+        lines.append("")
+        lines.append(SEP)
+        lines.append(f"💡 <b>Ideias ({min(len(ideas), 5)})</b>")
         for i in ideas[:5]:
-            title = i.get("title", "")
-            project = f" [{i['project']}]" if i.get("project") else ""
-            lines.append(f"  • {title}{project}")
+            title = _escape_html(_clean_name(i.get("title", "")))
+            project = i.get("project")
+            if project:
+                lines.append(f"▪️ {title} <i>· 📁 {_escape_html(project)}</i>")
+            else:
+                lines.append(f"▪️ {title}")
 
-    # Rodapé com contagem
-    lines.append(f"\n—\n📊 *{len(tasks)} ativa(s)*")
+    lines.append("")
+    lines.append(SEP)
+    lines.append(f"📊 Total: <b>{len(tasks)}</b> tarefa(s) ativa(s)")
 
     return "\n".join(lines)
