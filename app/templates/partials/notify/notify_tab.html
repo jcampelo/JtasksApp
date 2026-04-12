@@ -57,11 +57,13 @@
              {% if config.enabled %}checked{% endif %} />
       <label for="cfg-enabled">Habilitar envio automático diário por email</label>
     </div>
+    {% if is_bot_owner %}
     <div class="notify-check-row">
       <input type="checkbox" name="telegram_enabled" id="cfg-telegram" value="1"
              {% if config.telegram_enabled %}checked{% endif %} />
       <label for="cfg-telegram">Habilitar resumo diário no Telegram</label>
     </div>
+    {% endif %}
     <button type="submit" class="btn-save-config">Salvar configuração</button>
   </form>
 </div>

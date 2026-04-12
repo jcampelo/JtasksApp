@@ -22,6 +22,7 @@ async def notify_config_page(request: Request, user=Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
     cfg = load_config(user["user_id"])
+    is_bot_owner = user.get("user_id") == settings.bot_owner_user_id
     return templates.TemplateResponse(
         "partials/notify/notify_tab.html",
         {
@@ -30,6 +31,7 @@ async def notify_config_page(request: Request, user=Depends(get_current_user)):
             "smtp_configured": _smtp_configured(),
             "smtp_from": settings.smtp_user,
             "smtp_from_name": settings.smtp_from_name,
+            "is_bot_owner": is_bot_owner,
         },
     )
 
@@ -46,12 +48,13 @@ async def save_notify_config(
     if isinstance(user, RedirectResponse):
         return user
 
+    is_bot_owner = user.get("user_id") == settings.bot_owner_user_id
     new_cfg = {
         "user_id": user["user_id"],
         "email_to": email_to,
         "schedule_time": schedule_time,
         "enabled": enabled == "1",
-        "telegram_enabled": telegram_enabled == "1",
+        "telegram_enabled": telegram_enabled == "1" if is_bot_owner else False,
     }
     try:
         save_config(new_cfg, user["user_id"])
