@@ -35,9 +35,9 @@ async def app_page(request: Request, user=Depends(get_current_user)):
             .select("theme") \
             .eq("user_id", user["user_id"]) \
             .execute()
-        user_theme = prefs.data[0]["theme"] if prefs.data else "light"
+        user_theme = prefs.data[0]["theme"] if prefs.data else "dark"
     except Exception:
-        user_theme = "light"
+        user_theme = "dark"
 
     return templates.TemplateResponse(
         "pages/app.html",
