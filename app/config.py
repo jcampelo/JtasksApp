@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
     groq_api_key: str = ""
     bot_api_key: str = ""
     bot_owner_user_id: str = ""

@@ -40,6 +40,7 @@ async def save_notify_config(
     email_to: str = Form(""),
     schedule_time: str = Form("08:00"),
     enabled: str = Form(""),
+    telegram_enabled: str = Form(""),
     user=Depends(get_current_user),
 ):
     if isinstance(user, RedirectResponse):
@@ -50,6 +51,7 @@ async def save_notify_config(
         "email_to": email_to,
         "schedule_time": schedule_time,
         "enabled": enabled == "1",
+        "telegram_enabled": telegram_enabled == "1",
     }
     try:
         save_config(new_cfg, user["user_id"])

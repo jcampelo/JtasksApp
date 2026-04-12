@@ -1,3 +1,6 @@
+import json
+
+import httpx
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -52,16 +55,66 @@ def _run_overdueDate_job():
         print(f"[scheduler] Erro ao atualizar tarefas vencidas: {e}")
 
 
+def _run_telegram_job(cfg: dict):
+    """Envia o resumo diário de tarefas, notas e ideias via Telegram."""
+    from bot.formatters import format_daily_summary
+
+    chat_id = settings.telegram_chat_id
+    token = settings.telegram_bot_token
+
+    if not (chat_id and token):
+        print("[scheduler] Telegram: TELEGRAM_CHAT_ID ou TELEGRAM_BOT_TOKEN não configurados.")
+        return
+
+    base = settings.jtasks_internal_url
+    headers = {"X-Bot-Key": settings.bot_api_key}
+
+    try:
+        tasks = httpx.get(f"{base}/bot/tasks", headers=headers, params={"filter": "active"}, timeout=10).json().get("tasks", [])
+        notes = httpx.get(f"{base}/bot/notes", headers=headers, timeout=10).json().get("notes", [])
+        ideas = httpx.get(f"{base}/bot/ideas", headers=headers, timeout=10).json().get("ideas", [])
+    except Exception as e:
+        print(f"[scheduler] Telegram: erro ao buscar dados — {e}")
+        return
+
+    text = format_daily_summary(tasks, notes, ideas)
+
+    # Botões inline para concluir cada tarefa ativa
+    keyboard = []
+    for t in tasks:
+        keyboard.append([{
+            "text": f"✅ {t['name'][:40]}",
+            "callback_data": f"task:{t['id']}:complete",
+        }])
+
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown",
+    }
+    if keyboard:
+        payload["reply_markup"] = json.dumps({"inline_keyboard": keyboard})
+
+    try:
+        resp = httpx.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json=payload,
+            timeout=15,
+        )
+        resp.raise_for_status()
+        print(f"[scheduler] Telegram: resumo diário enviado para chat_id={chat_id}")
+    except Exception as e:
+        print(f"[scheduler] Telegram: erro ao enviar mensagem — {e}")
+
+
 def reschedule():
-    # Remove all existing email jobs
+    # Remove all existing email and telegram jobs
     for job in _scheduler.get_jobs():
-        if job.id.startswith("email_daily_"):
+        if job.id.startswith("email_daily_") or job.id.startswith("telegram_daily_"):
             _scheduler.remove_job(job.id)
 
     # Add a job per enabled user
     for cfg in load_all_configs():
-        if not cfg.get("enabled"):
-            continue
         user_id = cfg.get("user_id", "")
         if not user_id:
             continue
@@ -73,12 +126,22 @@ def reschedule():
             h, m = 8, 0
 
         trigger = CronTrigger(hour=h, minute=m, timezone="America/Sao_Paulo")
-        _scheduler.add_job(
-            _run_email_job, trigger,
-            id=_job_id(user_id),
-            args=[cfg],
-            replace_existing=True,
-        )
+
+        if cfg.get("enabled"):
+            _scheduler.add_job(
+                _run_email_job, trigger,
+                id=_job_id(user_id),
+                args=[cfg],
+                replace_existing=True,
+            )
+
+        if cfg.get("telegram_enabled"):
+            _scheduler.add_job(
+                _run_telegram_job, trigger,
+                id=f"telegram_daily_{user_id}",
+                args=[cfg],
+                replace_existing=True,
+            )
 
 
 def start_scheduler():
