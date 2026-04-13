@@ -50,6 +50,7 @@ async def login_submit(
         return response
 
     except Exception as e:
+        print(f"[LOGIN DEBUG] Exception type: {type(e).__name__}, message: {e}")
         error_msg = "Email ou senha incorretos."
         if "Invalid login" in str(e) or "invalid" in str(e).lower():
             error_msg = "Email ou senha incorretos."

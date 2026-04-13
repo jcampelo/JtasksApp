@@ -56,28 +56,52 @@
     htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
   });
 
+  // Verifica se o usuário está digitando em qualquer campo do painel ativo
+  function _isUserTyping() {
+    var activeEl = document.activeElement;
+    if (!activeEl) return false;
+    if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) return true;
+    // Verifica se um modal está aberto
+    var modal = document.getElementById('modal-container');
+    if (modal && modal.innerHTML.trim()) return true;
+    return false;
+  }
+
   // Atualiza a lista de tarefas ativas em tempo real via eventos do frontend
+  // Usa /tasks/filter para atualizar SOMENTE o corpo das tarefas, preservando o form
   document.body.addEventListener('refreshTasks', function() {
-    htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
+    var taskListBody = document.getElementById('task-list-body');
+    if (taskListBody) {
+      // O task-list-body já existe — atualiza somente as tarefas
+      htmx.ajax('GET', '/tasks/filter', {target: '#task-list-body', swap: 'innerHTML'});
+    } else {
+      // Primeira carga — carrega o painel inteiro
+      htmx.ajax('GET', '/tasks', {target: '#panel-ativas', swap: 'innerHTML'});
+    }
   });
 
   // Auto-refresh inteligente (Polling) a cada 10 segundos
   setInterval(function() {
-    // Evita atualizar se o usuário estiver com um form foco (escrevendo notas/tarefas)
-    const activeEl = document.activeElement;
-    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-    
-    if (isTyping) return;
+    // Evita atualizar se o usuário estiver digitando em qualquer campo
+    if (_isUserTyping()) return;
 
     // Checa qual é a aba atual e requisita as atualizações do servidor HTMX
-    const activeBtn = document.querySelector('.nav-item.active');
+    var activeBtn = document.querySelector('.nav-item.active');
     if (!activeBtn) return;
 
-    const tab = activeBtn.getAttribute('data-tab');
+    var tab = activeBtn.getAttribute('data-tab');
     
-    // Mapa das rotas por painel
-    const routes = {
-      'ativas': { url: '/tasks', target: '#panel-ativas' },
+    // Para a aba de tarefas ativas, atualiza somente o corpo (sem tocar no form)
+    if (tab === 'ativas') {
+      var taskListBody = document.getElementById('task-list-body');
+      if (taskListBody) {
+        htmx.ajax('GET', '/tasks/filter', {target: '#task-list-body', swap: 'innerHTML'});
+      }
+      return;
+    }
+
+    // Mapa das rotas por painel para as demais abas
+    var routes = {
       'notas': { url: '/notes', target: '#panel-notas' },
       'ideias': { url: '/ideas', target: '#panel-ideias' },
       'concluidas': { url: '/tasks/completed', target: '#panel-concluidas' },
