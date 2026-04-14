@@ -41,8 +41,9 @@
         {% set day_str = day.isoformat() %}
         {% set is_current_month = (day.month == target_month) %}
         {% set is_today = (day == today) %}
+        {% set is_weekend = (day.weekday() >= 5) %}
         {% set day_tasks = tasks_by_date.get(day_str, []) %}
-        <div class="calendar-cell {{ 'other-month' if not is_current_month else '' }} {{ 'today' if is_today else '' }}">
+        <div class="calendar-cell {{ 'other-month' if not is_current_month else '' }} {{ 'today' if is_today else '' }} {{ 'weekend' if is_weekend else '' }}">
           <div class="calendar-day-num">{{ day.day }}</div>
           <div class="calendar-tasks">
             {% for t in day_tasks %}
@@ -67,8 +68,9 @@
         {% set day_str = day.isoformat() %}
         {% set is_current_month = (day.month == target_month) %}
         {% set is_today = (day == today) %}
+        {% set is_weekend = (day.weekday() >= 5) %}
         {% set day_tasks = tasks_by_date.get(day_str, []) %}
-        <div class="cal-list-day {{ 'other-month' if not is_current_month else '' }} {{ 'today' if is_today else '' }}">
+        <div class="cal-list-day {{ 'other-month' if not is_current_month else '' }} {{ 'today' if is_today else '' }} {{ 'weekend' if is_weekend else '' }}">
           <div class="cal-list-day-header">
             <span class="cal-list-day-num">{{ day.day }}</span>
             <span class="cal-list-day-name">{{ day.strftime('%a') | upper }}</span>

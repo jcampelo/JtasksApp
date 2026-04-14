@@ -1021,6 +1021,15 @@ input[type="submit"]:disabled {
 .cal-list-day.other-month {
   opacity: 0.45;
 }
+.cal-list-day.weekend .cal-list-day-header {
+  background: rgba(255,255,255,0.03);
+}
+[data-theme="light"] .cal-list-day.weekend .cal-list-day-header {
+  background: rgba(13,31,53,0.04);
+}
+.cal-list-day.weekend .cal-list-day-name {
+  color: var(--accent);
+}
 .cal-list-day.today .cal-list-day-header {
   background: var(--accent-light);
 }
@@ -1120,6 +1129,12 @@ input[type="submit"]:disabled {
 .calendar-cell.other-month {
   background: var(--bg-surface2);
   opacity: 0.4;
+}
+.calendar-cell.weekend {
+  background: rgba(255,255,255,0.025);
+}
+[data-theme="light"] .calendar-cell.weekend {
+  background: rgba(13,31,53,0.03);
 }
 .calendar-cell.today {
   background: var(--accent-light);
