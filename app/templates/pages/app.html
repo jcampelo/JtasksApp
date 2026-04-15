@@ -105,7 +105,9 @@
 
     // Mapa das rotas por painel para as demais abas
     var routes = {
-      'notas': { url: '/notes', target: '#panel-notas' },
+      // 'notas' removido do polling: o estado minimizado vive no localStorage
+      // e seria perdido a cada re-render. Notas só mudam quando o próprio usuário
+      // interage, então polling não agrega valor aqui.
       'ideias': { url: '/ideas', target: '#panel-ideias' },
       'concluidas': { url: '/tasks/completed', target: '#panel-concluidas' },
       'calendario': { url: '/tasks/calendar', target: '#panel-calendario' },

@@ -1,7 +1,7 @@
 <div class="page-title" style="display:flex; justify-content:space-between; align-items:center;">
   <span>Minhas Notas</span>
   <button class="btn-add" style="margin: 0; padding: 6px 12px; font-size: 0.8rem;"
-          hx-post="/notes" hx-target="#panel-notas" hx-swap="innerHTML">
+    hx-post="/notes" hx-target="#panel-notas" hx-swap="innerHTML">
     + Nova Nota
   </button>
 </div>
@@ -12,9 +12,16 @@
 
 <div class="notes-grid">
   {% for note in notes %}
-  <div class="post-it color-{{ note.color }}" id="note-{{ note.id }}">
+  <div class="post-it color-{{ note.color }}"
+       id="note-{{ note.id }}"
+       x-data="noteItem('{{ note.id }}')"
+       :class="{ 'is-minimized': minimized }">
+
+    <!-- === HEADER === -->
     <div class="post-it-header">
-      <div class="post-it-color-picker">
+
+      <!-- Color picker — oculto via CSS quando minimizado -->
+      <div class="post-it-color-picker note-only-expanded">
         <button type="button" class="color-btn yellow {% if note.color == 'yellow' %}active{% endif %}"
                 hx-patch="/notes/{{ note.id }}" hx-vals='{"color": "yellow"}' hx-target="#panel-notas" hx-swap="innerHTML"></button>
         <button type="button" class="color-btn blue {% if note.color == 'blue' %}active{% endif %}"
@@ -24,30 +31,71 @@
         <button type="button" class="color-btn green {% if note.color == 'green' %}active{% endif %}"
                 hx-patch="/notes/{{ note.id }}" hx-vals='{"color": "green"}' hx-target="#panel-notas" hx-swap="innerHTML"></button>
       </div>
+
+      <!-- Título colapsado — só aparece via CSS quando minimizado -->
+      <span class="post-it-title-collapsed note-only-minimized">{{ note.title | e }}</span>
+
+      <!-- Botões de ação -->
       <div class="post-it-actions">
-        <button type="button" class="post-it-btn task-btn"
+        <!-- Converter — oculto via CSS quando minimizado -->
+        <button type="button" class="post-it-btn task-btn note-only-expanded"
                 title="Transformar em Atividade"
                 hx-post="/notes/{{ note.id }}/convert"
                 hx-target="#panel-notas" hx-swap="innerHTML">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
         </button>
+
+        <!-- Minimizar / Expandir -->
+        <button type="button" class="post-it-btn" title="Minimizar / Expandir" @click="toggle()">
+          <!-- ▲ quando expandido -->
+          <svg class="icon-expanded" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <!-- ▼ quando minimizado -->
+          <svg class="icon-minimized" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <!-- Excluir -->
         <button type="button" class="post-it-btn del-btn"
                 title="Excluir"
                 hx-delete="/notes/{{ note.id }}"
                 hx-target="#note-{{ note.id }}" hx-swap="outerHTML"
                 hx-confirm="Tem certeza que deseja excluir esta nota?">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
         </button>
       </div>
     </div>
-    <form class="post-it-body">
-      <textarea name="content" 
-                hx-patch="/notes/{{ note.id }}" 
-                hx-trigger="keyup changed delay:500ms"
-                hx-target="#panel-notas"
-                hx-swap="none"
-                placeholder="Escreva algo...">{{ note.content }}</textarea>
-    </form>
+
+    <!-- === CORPO (oculto via CSS quando minimizado) === -->
+    <div class="post-it-body note-only-expanded">
+      <!-- Título editável -->
+      <input type="text"
+             class="post-it-title"
+             value="{{ note.title | e }}"
+             placeholder="Título da nota"
+             name="title"
+             hx-patch="/notes/{{ note.id }}"
+             hx-trigger="keyup changed delay:500ms"
+             hx-swap="none" />
+
+      <!-- Conteúdo -->
+      <form class="post-it-content-form">
+        <textarea name="content"
+                  hx-patch="/notes/{{ note.id }}"
+                  hx-trigger="keyup changed delay:500ms"
+                  hx-swap="none"
+                  placeholder="Escreva algo...">{{ note.content }}</textarea>
+      </form>
+    </div>
+
   </div>
   {% else %}
   <div class="tab-loading" style="grid-column: 1 / -1; min-height: 200px;">
@@ -56,14 +104,40 @@
   {% endfor %}
 </div>
 
+<script>
+// Componente Alpine para cada post-it
+function noteItem(noteId) {
+  return {
+    minimized: false,
+    init() {
+      // Lê o estado do localStorage — sem flash porque CSS já esconde via .is-minimized
+      const ids = JSON.parse(localStorage.getItem('notes_minimized') || '[]');
+      this.minimized = ids.includes(noteId);
+    },
+    toggle() {
+      this.minimized = !this.minimized;
+      let ids = JSON.parse(localStorage.getItem('notes_minimized') || '[]');
+      if (this.minimized) {
+        if (!ids.includes(noteId)) ids.push(noteId);
+      } else {
+        ids = ids.filter(id => id !== noteId);
+      }
+      localStorage.setItem('notes_minimized', JSON.stringify(ids));
+    }
+  };
+}
+</script>
+
 <style>
-/* CSS Local para os Post-its */
+/* ── Grid ── */
 .notes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
   align-items: start;
 }
+
+/* ── Post-it base ── */
 .post-it {
   border-radius: 8px;
   padding: 12px;
@@ -78,31 +152,43 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 15px rgba(0,0,0,0.15);
 }
+.post-it.is-minimized {
+  min-height: 0;
+}
 
-/* Post-it colors */
+/* ── Visibilidade expandido/minimizado — via CSS puro, sem flash ── */
+/* Por padrão (expandido): .note-only-minimized está escondido */
+.note-only-minimized { display: none; }
+/* Quando minimizado: .note-only-expanded some, .note-only-minimized aparece */
+.post-it.is-minimized .note-only-expanded { display: none !important; }
+.post-it.is-minimized .note-only-minimized { display: block; }
+/* Ícones de direção */
+.icon-minimized { display: none; }
+.post-it.is-minimized .icon-expanded { display: none; }
+.post-it.is-minimized .icon-minimized { display: block; }
+
+/* ── Cores ── */
 .post-it.color-yellow { background-color: #FFF9B1; color: #5B5731; border: 1px solid #E6DFA2; }
-.post-it.color-blue { background-color: #D4F4FF; color: #2B5766; border: 1px solid #BFE7F5; }
-.post-it.color-pink { background-color: #FFDFEB; color: #66394A; border: 1px solid #F0C4D4; }
-.post-it.color-green { background-color: #DCFFDF; color: #355E38; border: 1px solid #BDE8C1; }
+.post-it.color-blue   { background-color: #D4F4FF; color: #2B5766; border: 1px solid #BFE7F5; }
+.post-it.color-pink   { background-color: #FFDFEB; color: #66394A; border: 1px solid #F0C4D4; }
+.post-it.color-green  { background-color: #DCFFDF; color: #355E38; border: 1px solid #BDE8C1; }
 
 [data-theme="dark"] .post-it.color-yellow { background-color: #4C4B3A; color: #E8E5CB; border-color: #5B5A46; }
-[data-theme="dark"] .post-it.color-blue { background-color: #364851; color: #D5EAF1; border-color: #445963; }
-[data-theme="dark"] .post-it.color-pink { background-color: #523D44; color: #EED7E0; border-color: #634B53; }
-[data-theme="dark"] .post-it.color-green { background-color: #3A4C3B; color: #D5EDD7; border-color: #4B614C; }
+[data-theme="dark"] .post-it.color-blue   { background-color: #364851; color: #D5EAF1; border-color: #445963; }
+[data-theme="dark"] .post-it.color-pink   { background-color: #523D44; color: #EED7E0; border-color: #634B53; }
+[data-theme="dark"] .post-it.color-green  { background-color: #3A4C3B; color: #D5EDD7; border-color: #4B614C; }
 
+/* ── Header ── */
 .post-it-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
-.post-it-color-picker {
-  display: flex;
-  gap: 4px;
-}
+.post-it-color-picker { display: flex; gap: 4px; }
 .color-btn {
-  width: 12px;
-  height: 12px;
+  width: 12px; height: 12px;
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.2);
   cursor: pointer;
@@ -111,57 +197,68 @@
 .color-btn:hover { transform: scale(1.2); }
 .color-btn.active { border: 2px solid #333; transform: scale(1.1); }
 [data-theme="dark"] .color-btn.active { border-color: #fff; }
-
 .color-btn.yellow { background-color: #FFF9B1; }
-.color-btn.blue { background-color: #D4F4FF; }
-.color-btn.pink { background-color: #FFDFEB; }
-.color-btn.green { background-color: #DCFFDF; }
+.color-btn.blue   { background-color: #D4F4FF; }
+.color-btn.pink   { background-color: #FFDFEB; }
+.color-btn.green  { background-color: #DCFFDF; }
 
-.post-it-actions {
-  display: flex;
-  gap: 6px;
+/* Título colapsado */
+.post-it-title-collapsed {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.88rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
+
+.post-it-actions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
 .post-it-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.5;
-  transition: opacity 0.2s, transform 0.2s;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: inherit; opacity: 0.5;
+  transition: opacity 0.2s;
+  padding: 2px; display: flex; align-items: center; justify-content: center;
   border-radius: 4px;
 }
-.post-it-btn:hover {
-  opacity: 1;
-  background: rgba(0,0,0,0.05);
-}
-[data-theme="dark"] .post-it-btn:hover {
-  background: rgba(255,255,255,0.1);
-}
+.post-it-btn:hover { opacity: 1; background: rgba(0,0,0,0.05); }
+[data-theme="dark"] .post-it-btn:hover { background: rgba(255,255,255,0.1); }
 
+/* ── Corpo ── */
 .post-it-body {
-  flex: 1;
   display: flex;
   flex-direction: column;
-}
-.post-it-body textarea {
   flex: 1;
+  margin-top: 4px;
+}
+
+/* Título editável */
+.post-it-title {
   width: 100%;
   background: transparent;
   border: none;
-  resize: none;
-  font-family: inherit;
-  font-size: 0.95rem;
+  border-bottom: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.9rem;
   color: inherit;
   outline: none;
-  line-height: 1.4;
-  padding: 0;
+  font-family: inherit;
+  padding: 2px 0;
+  margin-bottom: 6px;
+  transition: border-color 0.15s;
 }
-/* HTMX swap fix visually */
-.post-it-body textarea.htmx-request {
-  opacity: 0.6;
+.post-it-title:focus { border-bottom-color: currentColor; }
+.post-it-title::placeholder { opacity: 0.45; font-weight: 400; }
+
+.post-it-content-form { flex: 1; display: flex; flex-direction: column; }
+.post-it-content-form textarea {
+  flex: 1;
+  min-height: 120px;
+  width: 100%;
+  background: transparent;
+  border: none; resize: none;
+  font-family: inherit; font-size: 0.95rem;
+  color: inherit; outline: none;
+  line-height: 1.4; padding: 0;
 }
+.post-it-content-form textarea.htmx-request { opacity: 0.6; }
 </style>
