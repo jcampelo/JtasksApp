@@ -1,0 +1,67 @@
+<div style="padding: 1rem;">
+  <h2 style="margin-bottom: 0.5rem;">Aprovações de Cadastro</h2>
+  <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+    Libere ou recuse usuários que se cadastraram na aplicação.
+  </p>
+
+  {% if not approvals %}
+    <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+      Nenhum usuário cadastrado ainda.
+    </div>
+  {% else %}
+    <div class="admin-table-wrap" style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="text-align: left; padding: 0.5rem;">Email</th>
+            <th style="text-align: left; padding: 0.5rem;">Solicitado em</th>
+            <th style="text-align: left; padding: 0.5rem;">Status</th>
+            <th style="text-align: right; padding: 0.5rem;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in approvals %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.5rem;">{{ a.email }}</td>
+            <td style="padding: 0.5rem; color: var(--text-muted);">
+              {{ a.requested_at[:16] if a.requested_at else '—' }}
+            </td>
+            <td style="padding: 0.5rem;">
+              {% if a.status == 'approved' %}
+                <span style="color: var(--success); font-weight: 600;">Aprovado</span>
+              {% elif a.status == 'rejected' %}
+                <span style="color: var(--danger); font-weight: 600;">Recusado</span>
+              {% else %}
+                <span style="color: var(--accent); font-weight: 600;">Pendente</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.5rem; text-align: right;">
+              {% if a.status != 'approved' %}
+                <button class="btn btn-sm"
+                        hx-post="/admin/approve"
+                        hx-vals='{"user_id": "{{ a.user_id }}"}'
+                        hx-target="#panel-admin"
+                        hx-swap="innerHTML"
+                        style="background: var(--success); color: white; padding: 0.25rem 0.6rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem;">
+                  Aprovar
+                </button>
+              {% endif %}
+              {% if a.status != 'rejected' %}
+                <button class="btn btn-sm"
+                        hx-post="/admin/reject"
+                        hx-vals='{"user_id": "{{ a.user_id }}"}'
+                        hx-target="#panel-admin"
+                        hx-swap="innerHTML"
+                        hx-confirm="Recusar este cadastro?"
+                        style="background: var(--danger); color: white; padding: 0.25rem 0.6rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; margin-left: 0.25rem;">
+                  Recusar
+                </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>

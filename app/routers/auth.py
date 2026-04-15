@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from supabase import create_client
 
 from app.config import settings
+from app.services import approval_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -35,6 +36,18 @@ async def login_submit(
         result = client.auth.sign_in_with_password({"email": email, "password": password})
         session_data = result.session
         user = result.user
+
+        if not approval_service.is_approved(str(user.id), user.email):
+            status = approval_service.get_status(str(user.id))
+            if status == "rejected":
+                error_msg = "Seu cadastro foi recusado. Entre em contato com o administrador."
+            else:
+                error_msg = "Sua conta está aguardando aprovação do administrador."
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": error_msg, "css_version": _CSS_V},
+                status_code=200,
+            )
 
         request.session["user"] = {
             "access_token": session_data.access_token,
@@ -84,20 +97,12 @@ async def register_submit(
         client = create_client(settings.supabase_url, settings.supabase_anon_key)
         result = client.auth.sign_up({"email": email, "password": password})
 
-        if result.session:
-            user = result.user
-            request.session["user"] = {
-                "access_token": result.session.access_token,
-                "refresh_token": result.session.refresh_token,
-                "expires_at": result.session.expires_at,
-                "user_id": str(user.id),
-                "email": user.email,
-            }
-            response = HTMLResponse(content="", status_code=200)
-            response.headers["HX-Redirect"] = "/app"
-            return response
+        # Registra solicitação de aprovação (owner é auto-aprovado)
+        user = result.user
+        if user:
+            approval_service.create_pending(str(user.id), user.email or email)
 
-        # Email confirmation required
+        # Nunca cria sessão aqui — usuário precisa ser aprovado e fazer login.
         return templates.TemplateResponse(
             "register.html",
             {"request": request, "error": None, "success": True, "css_version": _CSS_V},

@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.deps import get_current_user
 from app.services.supabase_client import get_user_client
+from app.services.approval_service import OWNER_EMAIL
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -41,5 +42,5 @@ async def app_page(request: Request, user=Depends(get_current_user)):
 
     return templates.TemplateResponse(
         "pages/app.html",
-        {"request": request, "user": user, "css_version": _CSS_V, "user_theme": user_theme},
+        {"request": request, "user": user, "css_version": _CSS_V, "user_theme": user_theme, "owner_email": OWNER_EMAIL},
     )
