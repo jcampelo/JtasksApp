@@ -2,7 +2,7 @@
 Router de acompanhamento de usuários (owner only).
 
 Gate de segurança aplicado em nível de router — todos os endpoints herdam.
-NUNCA importar get_service_client() aqui. Toda lógica de dados fica em monitoring_service.py.
+NUNCA importar o cliente_de_servico aqui. Toda lógica de dados fica em monitoring_service.py.
 """
 import json
 from datetime import date
