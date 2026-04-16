@@ -1,0 +1,60 @@
+<!-- app/templates/partials/monitoring/monitoring_tab.html -->
+<div id="monitoring-panel"
+     x-data="{
+       autoRefresh: true,
+       lastUpdated: Date.now(),
+       timer: null,
+       secondsAgo: 0,
+       init() {
+         this.startTimer();
+         setInterval(() => { this.secondsAgo = Math.round((Date.now() - this.lastUpdated) / 1000); }, 1000);
+         this.$watch('autoRefresh', () => this.startTimer());
+       },
+       startTimer() {
+         clearInterval(this.timer);
+         this.timer = this.autoRefresh
+           ? setInterval(() => this.doRefresh(), 30000)
+           : null;
+       },
+       doRefresh() {
+         htmx.ajax('GET', '/monitoring/refresh-all', {target: '#monitoring-cards', swap: 'innerHTML'});
+         this.lastUpdated = Date.now();
+         this.secondsAgo = 0;
+       },
+       manualRefresh() {
+         this.doRefresh();
+         this.startTimer();
+       }
+     }"
+     style="padding: 16px;">
+
+  <!-- Toolbar -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+    <button class="btn btn-secondary btn-sm" @click="manualRefresh()" title="Atualizar agora">
+      ↻ Atualizar
+    </button>
+    <button class="btn btn-sm"
+            :class="autoRefresh ? 'btn-accent' : 'btn-secondary'"
+            @click="autoRefresh = !autoRefresh"
+            :title="autoRefresh ? 'Desativar atualização automática' : 'Ativar atualização automática'">
+      ⏱ Auto 30s: <span x-text="autoRefresh ? 'ON' : 'OFF'"></span>
+    </button>
+    <span style="color: var(--text-muted); font-size:0.85rem; margin-left:auto;">
+      Atualizado há <span x-text="secondsAgo < 60 ? secondsAgo + 's' : Math.round(secondsAgo/60) + 'min'"></span>
+    </span>
+    <button class="btn btn-primary btn-sm"
+            hx-get="/monitoring/pin-picker"
+            hx-target="#modal-container"
+            hx-swap="innerHTML">
+      + Pinar
+    </button>
+  </div>
+
+  <!-- Cards (ouve evento de refresh disparado por pin/unpin) -->
+  <div id="monitoring-cards"
+       hx-get="/monitoring/refresh-all"
+       hx-trigger="refreshMonitoringCards from:body"
+       hx-swap="innerHTML">
+    {% include "partials/monitoring/user_cards_list.html" %}
+  </div>
+</div>

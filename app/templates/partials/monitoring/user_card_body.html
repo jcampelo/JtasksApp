@@ -1,0 +1,51 @@
+<!-- app/templates/partials/monitoring/user_card_body.html -->
+<!-- Variáveis: groups (dict), watched_id -->
+{% set priority_icon = {"critica": "🔴", "urgente": "🟠", "normal": "⚪"} %}
+{% set group_labels = [
+  ("atrasadas", "Atrasadas", groups.atrasadas),
+  ("critica",   "Crítica",   groups.critica),
+  ("urgente",   "Urgente",   groups.urgente),
+  ("normal",    "Normal",    groups.normal),
+] %}
+
+<div style="padding: 8px 16px 16px;">
+  {% set has_tasks = groups.atrasadas or groups.critica or groups.urgente or groups.normal %}
+
+  {% if not has_tasks %}
+    <p style="color:var(--text-muted); text-align:center; padding:16px 0;">Sem tarefas ativas 🎉</p>
+  {% else %}
+    {% for group_key, group_label, group_tasks in group_labels %}
+      {% if group_tasks %}
+        <div style="margin-top:12px;">
+          <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted);
+                      text-transform:uppercase; letter-spacing:0.05em;
+                      border-bottom:1px solid var(--border); padding-bottom:4px; margin-bottom:6px;">
+            {{ group_label }}
+          </div>
+          {% for task in group_tasks %}
+            {% set today_str = now_date %}
+            <div style="display:flex; align-items:center; gap:8px; padding:6px 0;
+                        border-bottom:1px solid var(--border); font-size:0.9rem;">
+              <span>{{ priority_icon.get(task.priority, "⚪") }}</span>
+              <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                    title="{{ task.name }}">
+                {{ task.name }}
+              </span>
+              {% if task.project %}
+                <span style="font-size:0.8rem; color:var(--text-muted); min-width:60px; text-align:right;">
+                  {{ task.project }}
+                </span>
+              {% endif %}
+              {% if task.deadline %}
+                <span style="font-size:0.8rem; min-width:60px; text-align:right;
+                             {% if task.deadline < now_date %}color:var(--danger);{% else %}color:var(--text-muted);{% endif %}">
+                  {{ task.deadline[5:] }}
+                </span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</div>

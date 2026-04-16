@@ -1,0 +1,67 @@
+<!-- app/templates/partials/monitoring/user_card.html -->
+<!-- Variável de contexto: s (dict com watched_user_id, email, active, overdue, completed_today) -->
+<div class="card"
+     x-data="{ expanded: false, loaded: false }"
+     id="card-{{ s.watched_user_id }}"
+     style="margin-bottom:8px; overflow:hidden;">
+
+  <!-- Cabeçalho clicável -->
+  <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; cursor:pointer;
+              border-bottom: 1px solid var(--border);"
+       @click="
+         expanded = !expanded;
+         if (expanded && !loaded) {
+           loaded = true;
+           htmx.ajax('GET', '/monitoring/card/{{ s.watched_user_id }}', {
+             target: '#card-body-{{ s.watched_user_id }}',
+             swap: 'innerHTML'
+           });
+         }
+       "
+       :aria-expanded="expanded">
+
+    <!-- Chevron -->
+    <span x-text="expanded ? '▼' : '▶'" style="font-size:0.75rem; color:var(--text-muted); width:14px;"></span>
+
+    <!-- Nome/Email -->
+    <span style="flex:1; font-weight:500;">{{ s.email }}</span>
+
+    <!-- Contadores -->
+    <span style="font-size:0.85rem; color:var(--text-muted);">
+      {{ s.active }} ativa{% if s.active != 1 %}s{% endif %}
+    </span>
+
+    {% if s.overdue > 0 %}
+    <span style="font-size:0.85rem; color:var(--danger); margin-left:4px;">
+      · {{ s.overdue }} atrasada{% if s.overdue > 1 %}s{% endif %}
+    </span>
+    {% endif %}
+
+    {% if s.completed_today > 0 %}
+    <span style="font-size:0.85rem; color:var(--success); margin-left:4px;">
+      · {{ s.completed_today }} hoje
+    </span>
+    {% endif %}
+
+    <!-- Botão despinar -->
+    <button
+      hx-delete="/monitoring/pin/{{ s.watched_user_id }}"
+      hx-target="#monitoring-cards"
+      hx-swap="innerHTML"
+      hx-confirm="Despinar {{ s.email }}?"
+      @click.stop=""
+      aria-label="Despinar {{ s.email }}"
+      title="Despinar"
+      style="background:none; border:none; cursor:pointer; color:var(--text-muted);
+             padding:4px 8px; border-radius:4px; font-size:1rem;"
+      onmouseover="this.style.color='var(--danger)'"
+      onmouseout="this.style.color='var(--text-muted)'">
+      📌
+    </button>
+  </div>
+
+  <!-- Corpo (lazy loaded) -->
+  <div id="card-body-{{ s.watched_user_id }}" x-show="expanded" x-cloak style="padding:0;">
+    <!-- HTMX popula aqui no primeiro expand -->
+  </div>
+</div>

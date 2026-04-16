@@ -1,0 +1,22 @@
+<!-- app/templates/partials/monitoring/pin_picker_list.html -->
+{% for u in users %}
+<div style="display:flex; align-items:center; gap:12px; padding:10px 16px;
+            border-bottom:1px solid var(--border);"
+     x-show="!$el.closest('[x-data]') || '{{ u.email }}'.toLowerCase().includes(search.toLowerCase())"
+     x-cloak>
+  <span style="flex:1; font-size:0.9rem;">{{ u.email }}</span>
+  {% if u.pinned %}
+    <button class="btn btn-sm btn-secondary" disabled style="min-width:80px;">✓ Pinado</button>
+  {% else %}
+    <form hx-post="/monitoring/pin"
+          hx-target="#pin-picker-list"
+          hx-swap="innerHTML"
+          style="margin:0;">
+      <input type="hidden" name="watched_id" value="{{ u.user_id }}">
+      <button type="submit" class="btn btn-sm btn-primary" style="min-width:80px;">+ Pinar</button>
+    </form>
+  {% endif %}
+</div>
+{% else %}
+<p style="color:var(--text-muted); text-align:center; padding:24px;">Nenhum usuário disponível.</p>
+{% endfor %}
