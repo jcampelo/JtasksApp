@@ -5,6 +5,7 @@ Gate de segurança aplicado em nível de router — todos os endpoints herdam.
 NUNCA importar get_service_client() aqui. Toda lógica de dados fica em monitoring_service.py.
 """
 import json
+from datetime import date
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse
@@ -45,7 +46,12 @@ async def card_body(watched_id: str, request: Request, user=Depends(require_owne
     )
     return templates.TemplateResponse(
         "partials/monitoring/user_card_body.html",
-        {"request": request, "groups": groups, "watched_id": watched_id},
+        {
+            "request": request,
+            "groups": groups,
+            "watched_id": watched_id,
+            "now_date": date.today().isoformat(),
+        },
     )
 
 
