@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 
-from fastapi import Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from supabase import create_client
 
 from app.config import settings
+from app.services.approval_service import OWNER_EMAIL
 
 
 def get_current_user(request: Request):
@@ -33,3 +34,16 @@ def get_current_user(request: Request):
             return RedirectResponse(url="/auth/login", status_code=302)
 
     return session
+
+
+def require_owner(user=Depends(get_current_user)):
+    """
+    FastAPI Dependency que exige que o usuário autenticado seja o owner.
+    Levanta HTTPException(403) para não-owners — adequado para endpoints HTMX.
+    Retorna o dict do usuário para uso nos endpoints.
+    """
+    if isinstance(user, RedirectResponse):
+        raise HTTPException(status_code=403, detail="Não autenticado.")
+    if user.get("email") != OWNER_EMAIL:
+        raise HTTPException(status_code=403, detail="Acesso negado.")
+    return user
