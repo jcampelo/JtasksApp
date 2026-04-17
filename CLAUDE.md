@@ -223,6 +223,25 @@ SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SECRET_KEY
 
 ---
 
+## Ambiente Local (Desenvolvimento)
+
+### Subindo a aplicação (Windows PowerShell):
+```powershell
+cd C:\Users\campe\projetos-claude-code\JtasksApp
+.\.venv\Scripts\uvicorn main:app --port 8080 --reload
+```
+Acesse em `http://127.0.0.1:8080`
+
+### Após puxar mudanças da VPS ou do git:
+Sempre atualizar o `.venv` local para evitar incompatibilidades de dependências:
+```powershell
+.\.venv\Scripts\pip install -r requirements.txt
+```
+
+> **Causa de um incidente real:** o `.venv` local estava com `supabase==2.9.0` enquanto o `requirements.txt` exigia `2.28.3`. A versão antiga não suportava o novo formato de chaves do Supabase (`sb_publishable_...` / `sb_secret_...`), causando `Invalid API key` na criação do client e impedindo o login.
+
+---
+
 ## Erros Comuns a Evitar
 
 1. **Query sem filtro user_id** — Vaza dados entre usuários
@@ -231,3 +250,4 @@ SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SECRET_KEY
 4. **`git pull` no deploy** — Falha silenciosamente se houver conflito local. Usar `git reset --hard`
 5. **Template usando variável não definida** — Se o router não passar a variável, Jinja2 lança `UndefinedError` e HTMX falha silenciosamente
 6. **Esquecer `css_version` no context** — CSS fica cacheado indefinidamente no mobile
+7. **`.venv` desatualizado** — Após puxar mudanças, sempre rodar `pip install -r requirements.txt`. Versões antigas da lib `supabase` não suportam as novas chaves `sb_publishable_` / `sb_secret_`

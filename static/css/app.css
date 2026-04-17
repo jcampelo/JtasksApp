@@ -2166,3 +2166,76 @@ input[type="submit"]:disabled {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ══ GENERIC UTILITY BUTTONS & INPUTS (Monitoring & Outros) ══ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  outline: none;
+  font-size: 0.82rem;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+}
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 5px 9px;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary-light);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface2);
+  border-color: var(--input-border);
+}
+
+.btn-accent {
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn-accent:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.form-control {
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-size: 0.85rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.2s;
+  width: 100%;
+}
+.form-control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
