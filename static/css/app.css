@@ -2167,7 +2167,9 @@ input[type="submit"]:disabled {
   }
 }
 
-/* ══ GENERIC UTILITY BUTTONS & INPUTS (Monitoring & Outros) ══ */
+
+
+/* -- GENERIC UTILITY BUTTONS & INPUTS (Monitoring & Outros) -- */
 .btn {
   display: inline-flex;
   align-items: center;

@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
-from app.routers import auth, app_router, tasks, projects, presets, performance, notify, export, ideas, notes, user, bot_api, admin, monitoring
+from app.routers import auth, app_router, tasks, projects, presets, performance, notify, export, ideas, notes, user, bot_api, admin, monitoring, admin_permissions
 from app.scheduler import start_scheduler, stop_scheduler
 
 
@@ -35,6 +35,7 @@ app.include_router(user.router)
 app.include_router(bot_api.router)
 app.include_router(admin.router)
 app.include_router(monitoring.router)
+app.include_router(admin_permissions.router)
 
 if __name__ == "__main__":
     uvicorn.run(

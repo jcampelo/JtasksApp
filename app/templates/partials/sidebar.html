@@ -140,7 +140,7 @@
         Configurações
       </button>
 
-      {% if user.email == owner_email %}
+      {% if is_owner %}
       <button class="dropdown-item" data-tab="admin"
               @click="dropdownOpen = false"
               onclick="switchTab('admin', this)"
@@ -151,12 +151,23 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Admin
       </button>
+      <button class="dropdown-item" data-tab="permissions"
+              @click="dropdownOpen = false"
+              onclick="switchTab('permissions', this)"
+              hx-get="/admin/permissions/?t={{ css_version | default('now') }}"
+              hx-target="#panel-permissions"
+              hx-trigger="click once"
+              hx-swap="innerHTML">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Permissões
+      </button>
+      {% endif %}
+      {% if "monitoring" in user_features %}
       <button class="dropdown-item" data-tab="monitoring"
               @click="dropdownOpen = false"
               onclick="switchTab('monitoring', this)"
               hx-get="/monitoring" hx-target="#panel-monitoring"
               hx-trigger="click once" hx-swap="innerHTML">
-        <!-- Ícone para acompanhamento -->
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Acompanhamento
       </button>

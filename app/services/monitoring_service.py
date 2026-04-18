@@ -14,9 +14,10 @@ from app.services.approval_service import list_all as list_all_approvals, OWNER_
 
 
 def get_watched_users(owner_id: str, user_client) -> list[dict]:
-    """Retorna lista de watched_users do owner (via user_client com RLS)."""
+    """Retorna lista de watched_users do owner."""
+    svc = get_service_client()
     res = (
-        user_client.table("watched_users")
+        svc.table("watched_users")
         .select("watched_user_id, pinned_at")
         .eq("owner_id", owner_id)
         .order("pinned_at")
@@ -132,13 +133,14 @@ def fetch_watched_user_data(
 ) -> dict:
     """
     ÚNICO ponto de acesso a get_service_client() para tasks de outros usuários.
-    1. Valida que watched_id está nos pinados do owner (via user_client com RLS).
+    1. Valida que watched_id está nos pinados do owner.
     2. Busca tasks via service_client SEMPRE com .eq("user_id", watched_id).
     3. Retorna dados agrupados.
     """
+    svc = get_service_client()
     # Camada de validação: watched_id deve estar nos pinados do owner
     pin_check = (
-        user_client.table("watched_users")
+        svc.table("watched_users")
         .select("id")
         .eq("owner_id", owner_id)
         .eq("watched_user_id", watched_id)
@@ -184,7 +186,8 @@ def get_all_users_for_picker(owner_id: str, user_client) -> list[dict]:
 
 def pin_user(owner_id: str, watched_id: str, user_client) -> None:
     """Pina um usuário (insert idempotente)."""
-    user_client.table("watched_users").upsert(
+    svc = get_service_client()
+    svc.table("watched_users").upsert(
         {"owner_id": owner_id, "watched_user_id": watched_id},
         on_conflict="owner_id,watched_user_id",
     ).execute()
@@ -192,6 +195,7 @@ def pin_user(owner_id: str, watched_id: str, user_client) -> None:
 
 def unpin_user(owner_id: str, watched_id: str, user_client) -> None:
     """Despina um usuário."""
-    user_client.table("watched_users").delete().eq("owner_id", owner_id).eq(
+    svc = get_service_client()
+    svc.table("watched_users").delete().eq("owner_id", owner_id).eq(
         "watched_user_id", watched_id
     ).execute()

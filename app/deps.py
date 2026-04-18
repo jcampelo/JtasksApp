@@ -6,6 +6,7 @@ from supabase import create_client
 
 from app.config import settings
 from app.services.approval_service import OWNER_EMAIL
+from app.services.permissions_service import has_feature
 
 
 def get_current_user(request: Request):
@@ -38,12 +39,26 @@ def get_current_user(request: Request):
 
 def require_owner(user=Depends(get_current_user)):
     """
-    FastAPI Dependency que exige que o usuário autenticado seja o owner.
-    Levanta HTTPException(403) para não-owners — adequado para endpoints HTMX.
-    Retorna o dict do usuário para uso nos endpoints.
+    Gate exclusivo para administração de permissões (painel master).
+    Para gates de produto, usar require_feature(name).
     """
     if isinstance(user, RedirectResponse):
         raise HTTPException(status_code=403, detail="Não autenticado.")
     if user.get("email") != OWNER_EMAIL:
         raise HTTPException(status_code=403, detail="Acesso negado.")
     return user
+
+
+def require_feature(feature: str):
+    """
+    Factory que retorna dependency validando acesso à feature pelo usuário.
+    Owner sempre passa (recebe KNOWN_FEATURES implicitamente).
+    """
+    def _check(request: Request, user=Depends(get_current_user)):
+        if isinstance(user, RedirectResponse):
+            raise HTTPException(status_code=403, detail="Não autenticado.")
+        if not has_feature(user, request, feature):
+            raise HTTPException(status_code=403, detail="Acesso negado.")
+        return user
+
+    return _check

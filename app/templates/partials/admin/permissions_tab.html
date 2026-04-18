@@ -1,0 +1,17 @@
+<div id="permissions-panel" x-data="{ search: '' }" style="padding: 16px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <div>
+      <h2 style="margin:0 0 4px 0; font-size:1.1rem; font-weight:600;">Gerenciar Permissões</h2>
+      <p style="margin:0; color:var(--text-muted); font-size:0.85rem;">
+        Conceda ou revogue features para usuários aprovados.
+      </p>
+    </div>
+  </div>
+
+  <input type="text" x-model="search" placeholder="Buscar por email..."
+         class="form-control" style="max-width:400px; margin-bottom:16px;">
+
+  <div id="permissions-user-list">
+    {% include "partials/admin/permissions_user_list.html" %}
+  </div>
+</div>

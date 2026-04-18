@@ -1,22 +1,35 @@
 <!-- app/templates/partials/monitoring/pin_picker_list.html -->
 {% for u in users %}
-<div style="display:flex; align-items:center; gap:12px; padding:10px 16px;
-            border-bottom:1px solid var(--border);"
+<div class="preset-item"
      x-show="!$el.closest('[x-data]') || '{{ u.email }}'.toLowerCase().includes(search.toLowerCase())"
      x-cloak>
-  <span style="flex:1; font-size:0.9rem;">{{ u.email }}</span>
+  
+  <div class="preset-info">
+    <div class="preset-name" style="font-size: 0.95rem;">{{ u.email }}</div>
+  </div>
+  
   {% if u.pinned %}
-    <button class="btn btn-sm btn-secondary" disabled style="min-width:80px;">✓ Pinado</button>
+    <button class="btn btn-sm btn-secondary" disabled style="min-width: 80px; opacity: 0.6; cursor: not-allowed; border: none; background: transparent; padding: 4px;">✓ Pinado</button>
   {% else %}
-    <form hx-post="/monitoring/pin"
+    <form x-data="{ loading: false }"
+          @submit="loading = true"
+          hx-post="/monitoring/pin"
           hx-target="#pin-picker-list"
           hx-swap="innerHTML"
-          style="margin:0;">
+          hx-on::after-request="document.getElementById('modal-container').innerHTML=''"
+          style="margin: 0; display: flex;">
       <input type="hidden" name="watched_id" value="{{ u.user_id }}">
-      <button type="submit" class="btn btn-sm btn-primary" style="min-width:80px;">+ Pinar</button>
+      <button type="submit" :disabled="loading"
+              class="btn btn-sm"
+              style="min-width: 80px; padding: 6px 12px; background-color: rgba(11, 139, 120, 0.15); color: var(--accent); border: 1px solid rgba(11, 139, 120, 0.3); border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;"
+              onmouseover="if(!this.disabled)this.style.backgroundColor='rgba(11, 139, 120, 0.25)'"
+              onmouseout="this.style.backgroundColor='rgba(11, 139, 120, 0.15)'">
+        <span x-show="loading" class="filter-spinner"></span>
+        <span x-show="!loading">+ Pinar</span>
+      </button>
     </form>
   {% endif %}
 </div>
 {% else %}
-<p style="color:var(--text-muted); text-align:center; padding:24px;">Nenhum usuário disponível.</p>
+<div class="modal-empty" style="text-align: center; padding: 32px; color: var(--text-muted);">Nenhum usuário disponível para pinar.</div>
 {% endfor %}

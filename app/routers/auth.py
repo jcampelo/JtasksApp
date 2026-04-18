@@ -39,7 +39,12 @@ async def login_submit(
 
         if not approval_service.is_approved(str(user.id), user.email):
             status = approval_service.get_status(str(user.id))
-            if status == "rejected":
+            if status is None:
+                # O usuário efetuou o cadastro antes do sistema de aprovação existir.
+                # Criamos a solicitação de aprovação agora.
+                approval_service.create_pending(str(user.id), user.email)
+                error_msg = "Sua conta estava inativa e agora foi enviada para aprovação do administrador."
+            elif status == "rejected":
                 error_msg = "Seu cadastro foi recusado. Entre em contato com o administrador."
             else:
                 error_msg = "Sua conta está aguardando aprovação do administrador."
