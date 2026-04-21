@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     bot_api_key: str = ""
     bot_owner_user_id: str = ""
     jtasks_internal_url: str = "http://localhost:8000"
+    bridge_token: str = ""
 
 
 settings = Settings()
