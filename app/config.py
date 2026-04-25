@@ -26,5 +26,10 @@ class Settings(BaseSettings):
     jtasks_internal_url: str = "http://localhost:8000"
     bridge_token: str = ""
 
+    # Session cookie
+    session_https_only: bool = False  # True em produção (HTTPS obrigatório)
+    session_cookie_name: str = "jtasks_session"
+    session_same_site: str = "lax"
+
 
 settings = Settings()

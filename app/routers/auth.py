@@ -7,6 +7,7 @@ from supabase import create_client
 
 from app.config import settings
 from app.services import approval_service
+from app.services import session_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -20,7 +21,7 @@ except OSError:
 
 @router.api_route("/auth/login", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def login_page(request: Request):
-    if request.session.get("user"):
+    if request.session.get("session_id"):
         return RedirectResponse(url="/app", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request, "error": None, "css_version": _CSS_V})
 
@@ -54,13 +55,14 @@ async def login_submit(
                 status_code=200,
             )
 
-        request.session["user"] = {
-            "access_token": session_data.access_token,
-            "refresh_token": session_data.refresh_token,
-            "expires_at": session_data.expires_at,
-            "user_id": str(user.id),
-            "email": user.email,
-        }
+        session_id = session_service.create_session(
+            user_id=str(user.id),
+            email=user.email,
+            access_token=session_data.access_token,
+            refresh_token=session_data.refresh_token,
+            expires_at=session_data.expires_at,
+        )
+        request.session["session_id"] = session_id
 
         # HTMX: redireciona via header
         response = HTMLResponse(content="", status_code=200)
@@ -81,13 +83,16 @@ async def login_submit(
 
 @router.post("/auth/logout")
 async def logout(request: Request):
+    session_id = request.session.get("session_id")
+    if session_id:
+        session_service.delete_session(session_id)
     request.session.clear()
     return RedirectResponse(url="/auth/login", status_code=302)
 
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    if request.session.get("user"):
+    if request.session.get("session_id"):
         return RedirectResponse(url="/app", status_code=302)
     return templates.TemplateResponse("register.html", {"request": request, "error": None, "success": False, "css_version": _CSS_V})
 

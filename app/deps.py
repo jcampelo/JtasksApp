@@ -7,30 +7,42 @@ from supabase import create_client
 from app.config import settings
 from app.services.approval_service import OWNER_EMAIL
 from app.services.permissions_service import has_feature
+from app.services import session_service
 
 
 def get_current_user(request: Request):
     """
-    Dependency que lê a sessão do cookie, verifica expiração e renova se necessário.
-    Redireciona para /auth/login se não autenticado.
+    Dependency que resolve session_id do cookie, busca sessão server-side,
+    renova token se necessário. Redireciona para /auth/login se não autenticado.
     """
-    session = request.session.get("user")
-    if not session:
+    session_id = request.session.get("session_id")
+    if not session_id:
         return RedirectResponse(url="/auth/login", status_code=302)
 
-    # Verificar expiração do token
+    session = session_service.get_session(session_id)
+    if not session:
+        request.session.clear()
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    # Renovar token se estiver perto de expirar
     expires_at = session.get("expires_at", 0)
     now_ts = datetime.now(timezone.utc).timestamp()
 
-    if now_ts >= expires_at - 60:  # renovar 60s antes de expirar
+    if now_ts >= expires_at - 60:
         try:
             client = create_client(settings.supabase_url, settings.supabase_anon_key)
             result = client.auth.refresh_session(session["refresh_token"])
+            session_service.update_tokens(
+                session_id=session_id,
+                access_token=result.session.access_token,
+                refresh_token=result.session.refresh_token,
+                expires_at=result.session.expires_at,
+            )
             session["access_token"] = result.session.access_token
             session["refresh_token"] = result.session.refresh_token
             session["expires_at"] = result.session.expires_at
-            request.session["user"] = session
         except Exception:
+            session_service.delete_session(session_id)
             request.session.clear()
             return RedirectResponse(url="/auth/login", status_code=302)
 
