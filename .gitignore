@@ -15,3 +15,8 @@ venv/
 gemini.md
 .playwright-mcp/
 docs/session-security-followup-check-*.md
+.agents/
+.claude/skills/
+.qwen/
+.trae/
+skills-lock.json
