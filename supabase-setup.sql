@@ -74,6 +74,26 @@ CREATE TABLE notes (
 );
 
 
+-- Session store server-side (tokens ficam aqui, cookie guarda apenas session_id)
+CREATE TABLE IF NOT EXISTS app_sessions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID NOT NULL,
+    email           TEXT NOT NULL,
+    access_token    TEXT NOT NULL,
+    refresh_token   TEXT NOT NULL,
+    expires_at      BIGINT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    revoked_at      TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS app_sessions_id_idx      ON app_sessions (id);
+CREATE INDEX IF NOT EXISTS app_sessions_user_id_idx ON app_sessions (user_id);
+
+-- RLS: acesso exclusivo via service_role (o app nunca usa anon_key nessa tabela)
+ALTER TABLE app_sessions ENABLE ROW LEVEL SECURITY;
+
+
 -- -------------------------------------------------------------
 -- 2. ROW LEVEL SECURITY (RLS)
 -- Garante que cada usuário veja e altere apenas seus próprios dados
