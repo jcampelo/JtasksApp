@@ -12,3 +12,6 @@ venv/
 .claude/settings.local.json
 .worktrees/
 .claude/settings.json
+gemini.md
+.playwright-mcp/
+docs/session-security-followup-check-*.md
