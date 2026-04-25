@@ -47,20 +47,14 @@ async def meu_endpoint(request: Request, user=Depends(get_current_user)):
     # user["user_id"], user["access_token"], user["refresh_token"], user["email"]
 ```
 
-### Sessão do usuário (request.session["user"]):
-```python
-{
-    "access_token": str,
-    "refresh_token": str,
-    "expires_at": int,
-    "user_id": str,       # UUID do Supabase Auth
-    "email": str
-}
-```
+### Sessão do usuário (modelo server-side):
 
-- O token é renovado automaticamente em `deps.py` quando faltam < 60s para expirar
+- `request.session` guarda **apenas** `session_id` (UUID)
+- Os tokens (`access_token`, `refresh_token`, `expires_at`) ficam na tabela `app_sessions` no Supabase
+- `get_current_user()` busca a sessão server-side e entrega ao router um dict com `user_id`, `email`, `access_token` e `refresh_token` — a interface dos routers não muda
+- O token é renovado automaticamente em `deps.py` quando faltam < 60s para expirar, atualizando `app_sessions`
 - Login via Supabase Auth (`sign_in_with_password`)
-- Sessão gerenciada pelo `SessionMiddleware` do Starlette
+- Sessão gerenciada pelo `SessionMiddleware` do Starlette + `app/services/session_service.py`
 
 ---
 
