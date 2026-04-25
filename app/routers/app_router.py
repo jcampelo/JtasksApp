@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.deps import get_current_user
+from app.services import session_service
 from app.services.supabase_client import get_user_client
 from app.services.approval_service import OWNER_EMAIL
 from app.template_context import build_user_context
@@ -21,7 +22,8 @@ except OSError:
 
 @router.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def root(request: Request):
-    if request.session.get("user"):
+    session_id = request.session.get("session_id")
+    if session_id and session_service.get_session(session_id):
         return RedirectResponse(url="/app", status_code=302)
     return RedirectResponse(url="/auth/login", status_code=302)
 

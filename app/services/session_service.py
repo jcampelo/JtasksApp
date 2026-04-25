@@ -25,14 +25,17 @@ def create_session(user_id: str, email: str, access_token: str, refresh_token: s
 def get_session(session_id: str) -> Optional[dict]:
     """Busca sessão ativa pelo session_id. Retorna None se não existir ou revogada."""
     client = get_service_client()
-    result = (
-        client.table(_TABLE)
-        .select("id, user_id, email, access_token, refresh_token, expires_at")
-        .eq("id", session_id)
-        .is_("revoked_at", "null")
-        .single()
-        .execute()
-    )
+    try:
+        result = (
+            client.table(_TABLE)
+            .select("id, user_id, email, access_token, refresh_token, expires_at")
+            .eq("id", session_id)
+            .is_("revoked_at", "null")
+            .single()
+            .execute()
+        )
+    except Exception:
+        return None
     if not result.data:
         return None
     _touch(session_id, client)
