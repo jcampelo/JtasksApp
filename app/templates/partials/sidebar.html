@@ -21,7 +21,7 @@
     </style>
 
     <div class="sidebar-divider"></div>
-    <button class="nav-item active" data-tab="ativas"
+    <button class="nav-item active" data-tab="ativas" data-tooltip="Tasks Ativas"
             onclick="switchTab('ativas', this)"
             hx-get="/tasks"
             hx-target="#panel-ativas"
@@ -32,7 +32,7 @@
       <span class="nav-item-label">Tasks Ativas</span>
     </button>
 
-    <button class="nav-item" data-tab="projetos"
+    <button class="nav-item" data-tab="projetos" data-tooltip="Projetos"
             onclick="switchTab('projetos', this)"
             hx-get="/projects"
             hx-target="#panel-projetos"
@@ -42,7 +42,7 @@
       <span class="nav-item-label">Projetos</span>
     </button>
 
-    <button class="nav-item" data-tab="calendario"
+    <button class="nav-item" data-tab="calendario" data-tooltip="Calendário"
             onclick="switchTab('calendario', this)"
             hx-get="/tasks/calendar"
             hx-target="#panel-calendario"
@@ -53,7 +53,7 @@
     </button>
 
     <div class="sidebar-divider"></div>
-    <button class="nav-item" data-tab="ideias"
+    <button class="nav-item" data-tab="ideias" data-tooltip="Ideias"
             onclick="switchTab('ideias', this)"
             hx-get="/ideas"
             hx-target="#panel-ideias"
@@ -63,7 +63,7 @@
       <span class="nav-item-label">Ideias</span>
     </button>
 
-    <button class="nav-item" data-tab="notas"
+    <button class="nav-item" data-tab="notas" data-tooltip="Notas"
             onclick="switchTab('notas', this)"
             hx-get="/notes"
             hx-target="#panel-notas"
@@ -74,7 +74,7 @@
     </button>
 
     <div class="sidebar-divider"></div>
-    <button class="nav-item" data-tab="concluidas"
+    <button class="nav-item" data-tab="concluidas" data-tooltip="Concluídas"
             onclick="switchTab('concluidas', this)"
             hx-get="/tasks/completed"
             hx-target="#panel-concluidas"
@@ -84,7 +84,7 @@
       <span class="nav-item-label">Concluídas</span>
     </button>
 
-    <button class="nav-item" data-tab="performance"
+    <button class="nav-item" data-tab="performance" data-tooltip="Performance"
             onclick="switchTab('performance', this)">
       <span class="nav-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
       <span class="nav-item-label">Performance</span>
